@@ -15,6 +15,7 @@
 #include "lcd_ui.h"
 #include "sound.h"
 #include "time.h"
+#include "web-server.h"
 
 /*
         Definiciones para el guardado de la configuración
@@ -24,7 +25,7 @@ Conf_t Settings;
 // ESPTelnet telnet;
 
 FIR<float, 13> fir_lp;
-float coef_lp[13] = {660, 470, -1980, -3830, 504, 10027, 15214, 10027, 504, -3830, -1980, 470, 660};
+float coef_lp[13] = { 660, 470, -1980, -3830, 504, 10027, 15214, 10027, 504, -3830, -1980, 470, 660 };
 SlowFilter TestFiltro(3, 2, 15000, 120000, 0);
 SlowFilter TestFiltro2(2, 1, 15000, 120000, 0);
 
@@ -71,34 +72,34 @@ void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info);
 /*
         Listado de los caracteres creados con la función Create_WiFi_Chars()
 */
-enum WiFiChar : char
-{
+enum WiFiChar: char
+    {
     WiFiChar_Off = 0x1,  // Símbolo que representa el Wifi apagado
     WiFiChar_Lock,       // Símbolo que representa un candado
     WiFiChar_RSSI_1 = 4, // Símbolo que representa la intensidad mínima de recepción de Wifi (RSSI < -80)
     WiFiChar_RSSI_2,     // Símbolo que representa la intensidad media de recepción de Wifi (RSSI < -70)
     WiFiChar_RSSI_3,     // Símbolo que representa la intensidad media alta de recepción de Wifi (RSSI < -60)
     WiFiChar_RSSI_4,     // Símbolo que representa la intensidad máxima de recepción de Wifi (RSSI  > -60)
-};
+    };
 
-bool UI_Main(lcd_ui *ui, UI_Action action);
-bool UI_MainMenu(lcd_ui *ui, UI_Action action);
-bool UI_Calibrate(lcd_ui *ui, UI_Action action);
-bool UI_Ota(lcd_ui *ui, UI_Action action);
-bool UI_CambiarGarrafa(lcd_ui *ui, UI_Action action);
+bool UI_Main(lcd_ui* ui, UI_Action action);
+bool UI_MainMenu(lcd_ui* ui, UI_Action action);
+bool UI_Calibrate(lcd_ui* ui, UI_Action action);
+bool UI_Ota(lcd_ui* ui, UI_Action action);
+bool UI_CambiarGarrafa(lcd_ui* ui, UI_Action action);
 
-const char *responsePath = "MedidorGas/cmd/response";
+const char* responsePath = "MedidorGas/cmd/response";
 
-void onMqttMessage(const char *_topic, const uint8_t *payload, uint16_t length)
-{
-    // This callback is called when message from MQTT broker is received.
-    // Please note that you should always verify if the message's topic is the one you expect.
-    // For example: if (memcmp(topic, "myCustomTopic") == 0) { ... }
+void onMqttMessage(const char* _topic, const uint8_t* payload, uint16_t length)
+    {
+        // This callback is called when message from MQTT broker is received.
+        // Please note that you should always verify if the message's topic is the one you expect.
+        // For example: if (memcmp(topic, "myCustomTopic") == 0) { ... }
 
     Serial.print("New message on topic: ");
     Serial.println(_topic);
     Serial.print("Data: ");
-    Serial.println((const char *)payload);
+    Serial.println((const char*)payload);
     String topic = String(_topic);
     String msg = String(payload, length);
 
@@ -106,10 +107,12 @@ void onMqttMessage(const char *_topic, const uint8_t *payload, uint16_t length)
         if (msg == "detener") {
             DetenerMedicion();
             mqtt.publish(responsePath, "Medicion detenedida");
-        } else if (msg == "reanudar") {
+            }
+        else if (msg == "reanudar") {
             ReanudarMedicion();
             mqtt.publish(responsePath, "Medicion iniciada");
-        } else if (msg == "cal_info") {
+            }
+        else if (msg == "cal_info") {
             char str[128];
             sprintf(str, "{\"Zero\":%.0f, \"Conversion\":%.0f, \"Weight\":%.3f, \"CalTemp\": %.2f, \"Date\": %d}",
                     Settings.LoadCell_Calibration.Zero,
@@ -118,23 +121,25 @@ void onMqttMessage(const char *_topic, const uint8_t *payload, uint16_t length)
                     Settings.LoadCell_Calibration.TempCompensation.CalTemp,
                     Settings.LoadCell_Calibration.Date);
             mqtt.publish(responsePath, str);
-        } else if (msg == "state") {
+            }
+        else if (msg == "state") {
             mqtt.publish(responsePath, Garrafa_Estado.getJSON().c_str());
-        } else if (msg == "info") {
+            }
+        else if (msg == "info") {
             mqtt.publish(responsePath, Garrafa_Info.getJSON().c_str());
+            }
         }
     }
-}
 
 void onMqttConnected()
-{
+    {
     Serial.println("Connected to the broker!");
     // You can subscribe to custom topic if you need
     mqtt.subscribe("MedidorGas/cmd");
-}
+    }
 
 void setup()
-{
+    {
     Serial.begin(115200);
     Serial.println("Iniciando placa....");
 
@@ -174,7 +179,7 @@ void setup()
     Wire.begin(21, 19);
     if (!bmx280.begin()) {
         Serial.println("begin() failed. check your BMx280 Interface and I2C Address.");
-    }
+        }
     bmx280.resetToDefaults();
 
     // by default sensing is disabled and must be enabled by setting a non-zero
@@ -260,12 +265,12 @@ void setup()
 
     if (Settings.Garrafas.Contador == 0) {
         Serial.println("No hay ninguna garrafa cargada!!");
-    }
+        }
     Garrafa_Info.Print(false);
-}
+    }
 
 void loop()
-{
+    {
     static uint32_t last = 0, Publish_Time = 0, Update_Time = 0, MsgTime = 0, Consumo_Time = 0;
     /*
             Procesar la interfase de usuario
@@ -285,11 +290,11 @@ void loop()
         if (bmx280.hasValue()) {
             Pressure = bmx280.getPressure() / 100.0;
             Temperature = bmx280.getTemperature();
-        }
+            }
         bmx280.measure();
-    }
+        }
 
-    // Leer el HX711
+        // Leer el HX711
     if (hx711.is_ready()) {
         static int i = 0, acc = 0;
         acc += fir_lp.processReading(hx711.read());
@@ -303,24 +308,24 @@ void loop()
                     float CalTemp = Settings.LoadCell_Calibration.TempCompensation.CalTemp;
                     float Coeff = Settings.LoadCell_Calibration.TempCompensation.Coeff;
                     // LoadCellComp = LoadCell * 1000 + (CalTemp - Temperature) * 6;
-                } // else
-                // LoadCellComp = LoadCell;
-            }
-            // Serial.printf("Acc= %f, Zero: %f, Conv: %f\n", acc,
-            // Settings.LoadCell_Calibration.Zero,
-            // Settings.LoadCell_Calibration.Conversion); LoadCell.Print();
+                    } // else
+                    // LoadCellComp = LoadCell;
+                }
+                // Serial.printf("Acc= %f, Zero: %f, Conv: %f\n", acc,
+                // Settings.LoadCell_Calibration.Zero,
+                // Settings.LoadCell_Calibration.Conversion); LoadCell.Print();
             i = 0;
             acc = 0.0;
+            }
         }
-    }
 
     if (millis() - Update_Time > 4999) {
         Update_Time = millis();
         CalcularVariables();
         // Garrafa_Estado.Print();
-    }
+        }
 
-    // Publicar cada 5 segundos en home assistant, una vez que estè todo inicializado
+        // Publicar cada 5 segundos en home assistant, una vez que estè todo inicializado
     if (!Vars_Ready)
         Publish_Time = millis();
 
@@ -336,7 +341,7 @@ void loop()
         if (LastTime == 0) {
             LastTime = millis();
             LastVal = Val;
-        }
+            }
 
         if (Val < LastVal) {
             Time = millis() - LastTime; //Tiempo en mili segundos
@@ -349,11 +354,13 @@ void loop()
                 Consumo = (Consumo + Diff * 1000.0 * (3600000 / Time)) / 2;
             if (Time > 10 * 60 * 1000)
                 Time = Time > 10 * 60 * 1000;
-        } else if (Val > LastVal) {
+            }
+        else if (Val > LastVal) {
             LastVal = Val;
-        } else if (millis() - LastTime > Time * 2) { //Una vez pasado el doble del último tiempo de cambio, poner consumo en 0
+            }
+        else if (millis() - LastTime > Time * 2) { //Una vez pasado el doble del último tiempo de cambio, poner consumo en 0
             Consumo = 0.0;
-        }
+            }
 
         HA_TestFiltro.setValue(Val, 3);
         HA_Consumo.setValue(Consumo);
@@ -366,7 +373,7 @@ void loop()
                 Consumo,
                 Time);
         mqtt.publish("MedidorGas/consumo", str);
-    }
+        }
 
     if (millis() - Publish_Time > 4999) {
         Publish_Time = millis();
@@ -393,7 +400,7 @@ void loop()
         char str[256];
         TestFiltro.getJSONState(str);
         mqtt.publish("MedidorGas/test_filtro", str);
-    }
+        }
 
     mqtt.loop();
 
@@ -408,8 +415,9 @@ void loop()
             lcd.println("Reiniciando...");
             delay(5000);
             ESP.restart();
+            }
         }
-    } else
+    else
         WifiTimeOut = 0;
 
     static uint32_t MQTTTimeOut = 0;
@@ -423,16 +431,17 @@ void loop()
             lcd.println("Reiniciando...");
             delay(5000);
             ESP.restart();
+            }
         }
-    } else
+    else
         MQTTTimeOut = 0;
-}
+    }
 
-/*
-        Calcular el peso de garrafa y determinar el resto de las mediciones.
-*/
+    /*
+            Calcular el peso de garrafa y determinar el resto de las mediciones.
+    */
 void CalcularVariables()
-{
+    {
     static float LastHora = NAN, LastDia = NAN;
     static bool HoraOk = false, DiaOk = false, MesOk = false;
     static int32_t LastVal = 0, LastVal2;
@@ -459,13 +468,13 @@ void CalcularVariables()
     if (Last_Time == 0) { // Solo al inicio
         LastVal = LastVal2 = val;
         Last_Time = millis();
-    }
+        }
 
     if (abs(val - LastVal2) > 0) {
         Last_Time = millis();
         LastVal2 = val;
         TimeOut++;
-    }
+        }
 
     if (millis() - Last_Time > 30000 || TimeOut > 24) { // Tiempo mínimo (en ms) que se debe mantener el valor para hacer el cambio
         Last_Time = millis();
@@ -476,7 +485,7 @@ void CalcularVariables()
             diff = max_step;
         LastVal += diff;
         TimeOut = 0;
-    }
+        }
 
     sprintf(str, "{\"Last_Time\":%u, \"LastVal\":%d, \"LastVal2\":%d,  \"val\":%d, \"LoadCell\": %.2f,  \"timeout\":%d}",
             millis() - Last_Time,
@@ -503,31 +512,33 @@ void CalcularVariables()
 
     secs = getTime(nullptr);
     if (secs % 3600 < 5 && !HoraOk) // Consumo por hora
-    {
+        {
         Garrafa_Estado.TiempoDisponible = Garrafa_Estado.Kg_Disponible / Garrafa_Estado.Kg_Consumido * Garrafa_Estado.TiempoEnLinea; // Estimar tiempo restante
         Garrafa_Estado.ConsumoHora = LastHora - Garrafa_Estado.Kg_Consumido;
         LastHora = Garrafa_Estado.Kg_Consumido;
         HoraOk = true;
-    } else
+        }
+    else
         HoraOk = false;
 
     if (secs % (3600 * 24) < 5 && !DiaOk) // Consumo por día
-    {
+        {
         Garrafa_Estado.ConsumoDia = LastDia - Garrafa_Estado.Kg_Consumido;
         LastDia = Garrafa_Estado.Kg_Consumido;
         DiaOk = true;
-    } else
+        }
+    else
         DiaOk = false;
 
     Garrafa_Estado.ConsumoMes = 0.0;
     Vars_Ready = true;
-}
+    }
 
-/*
-        Detener el calculo de mediciones de peso y de consumo
-*/
+    /*
+            Detener el calculo de mediciones de peso y de consumo
+    */
 void DetenerMedicion(bool save)
-{
+    {
     Garrafa_Info.OnLine = false;
     Garrafa_Info.Kg_Final = LoadCell;
     Garrafa_Info.TiempoFinal = getTime(nullptr);
@@ -537,35 +548,36 @@ void DetenerMedicion(bool save)
     Settings.Garrafas.Datos[0] = Garrafa_Info;
     if (save)
         Settings.Save();
-}
+    }
 
-/*
-        Detener el calculo de mediciones de peso y de consumo
-*/
+    /*
+            Detener el calculo de mediciones de peso y de consumo
+    */
 void ReanudarMedicion(bool save)
-{
+    {
     Garrafa_Info.OnLine = true;
     Serial.printf("Reanudando medicion de garrafa... \n");
 
     Settings.Garrafas.Datos[0] = Garrafa_Info;
     if (save)
         Settings.Save();
-}
+    }
 
-/*
+    /*
 
-*/
+    */
 void CambiarGarrafa(InfoGarrafa_t Info)
-{
+    {
     if (Settings.Garrafas.Contador > 0) {
         Serial.printf("Iniciando cambio de garrafa...\n");
         DetenerMedicion(false);
         Serial.printf("Caracteristicas de garrafa actual:\n");
         Garrafa_Info.Print();
-    } else {
+        }
+    else {
         Serial.printf("Iniciando instalacion de primer garrafa...\n");
         DetenerMedicion(false);
-    }
+        }
 
     Serial.printf("\nCaracteristicas de garrafa nueva:\n");
     constrain(Info.Capacidad, 5.0, 100.0);
@@ -579,8 +591,8 @@ void CambiarGarrafa(InfoGarrafa_t Info)
         Serial.printf("Actualizando lista de cambios...\n");
         for (int i = 1; i < sizeof(Settings.Garrafas.Datos) / sizeof(Settings.Garrafas.Datos[0]); i++) {
             Settings.Garrafas.Datos[i] = Settings.Garrafas.Datos[i - 1];
+            }
         }
-    }
     Settings.Garrafas.Contador++;
     Settings.Garrafas.Datos[0] = Info;
     Garrafa_Info = Info;
@@ -588,16 +600,18 @@ void CambiarGarrafa(InfoGarrafa_t Info)
     if (Settings.Garrafas.Contador > 1)
         Serial.printf("Se han realizado %d cambios de garras\n", Settings.Garrafas.Contador);
     Serial.printf("Listo!\n");
-}
+    }
 
 void PrintListaGarrafas()
-{
-    char str[64];
+    {
+    char str[128];
     struct tm tstruct;
 
     Serial.printf("Imprimiendo lista de cambios de garrafas\n");
     Serial.printf("%-30s | %-10s | %-15s\n", "Fecha", "Capacidad", "Duracion");
     Serial.printf("%-30s | %-10.s | %-15.s\n", "Fecha", "Peso", "Duracion");
+
+    
 
     // for (int i = 0; i < sizeof(Settings.Readings.List) / sizeof(Settings.Readings.List[0]); i++) {
     //     tstruct = *localtime(&Settings.Readings.List[i].Fecha);
@@ -606,13 +620,13 @@ void PrintListaGarrafas()
     //     Serial.printf("%-30s | %-10.2f | %-15.s\n", str,
     //                   Settings.Readings.List[i].Capacidad, "-");
     // }
-}
+    }
 
-bool UI_Main(lcd_ui *ui, UI_Action action)
-{
+bool UI_Main(lcd_ui* ui, UI_Action action)
+    {
     static ValBlinker Blink(5000);
     static int8_t Pos = 0, Level = 0;
-    char str[32] = {0};
+    char str[32] = { 0 };
 
     if (action == UI_Action::Init || action == UI_Action::Restore) {
         Serial.printf("UI_Main-> action == UI_Action::Init\n");
@@ -620,7 +634,8 @@ bool UI_Main(lcd_ui *ui, UI_Action action)
         Create_WiFi_Chars(ui);
         Level = 0;
         return true;
-    } else if (action != UI_Action::Run)
+        }
+    else if (action != UI_Action::Run)
         return false;
 
     time_t secs = time(nullptr);
@@ -633,13 +648,14 @@ bool UI_Main(lcd_ui *ui, UI_Action action)
         wl_status_t status = WiFi.status();
         if (status == WL_CONNECTED) {
             ui->lcd->write(getWiFiRSSICode());
-        } else {
+            }
+        else {
             if (ui->Blinker.Update())
                 ui->lcd->write(WiFiChar_RSSI_4);
             else
                 ui->lcd->write(' ');
+            }
         }
-    }
 
     if (ui->Blinker.Update())
         ui->lcd->printf(" %0.2i:%0.2i", now.tm_hour, now.tm_min, now.tm_sec);
@@ -662,7 +678,8 @@ bool UI_Main(lcd_ui *ui, UI_Action action)
         time_t time = Garrafa_Info.TiempoInicio;
         now = *localtime(&time);
         ui->lcd->printf("Inicio: %02d/%02d/%02d  ", now.tm_mday, now.tm_mon + 1, now.tm_year - 100);
-    } else if (Level == 4) {
+        }
+    else if (Level == 4) {
         String res = getElapsedTime(Garrafa_Estado.TiempoEnLinea, false);
         res.replace("dias", "d");
         res.replace("dia", "d");
@@ -670,79 +687,81 @@ bool UI_Main(lcd_ui *ui, UI_Action action)
             res = res.substring(0, res.length() - 3);
         // Dur:xxx d xx:xx
         ui->lcd->printf("Dur:%12s", res.c_str());
-    } else
+        }
+    else
         Level = 0;
 
     switch (ui->GetKeys()) {
-    case Keys::Enter:
-        ui->Show("menu");
-        break;
+            case Keys::Enter:
+                ui->Show("menu");
+                break;
 
-    case Keys::Esc:
-        ui->Close(UI_DialogResult::Cancel);
-        break;
+            case Keys::Esc:
+                ui->Close(UI_DialogResult::Cancel);
+                break;
 
-    case Keys::Up:
-        Blink.Reset();
-        Level++;
-        if (Level > 4)
-            Level = 0;
-        break;
+            case Keys::Up:
+                Blink.Reset();
+                Level++;
+                if (Level > 4)
+                    Level = 0;
+                break;
 
-    case Keys::Down:
-        Blink.Reset();
-        Level--;
-        if (Level < 0)
-            Level = 4;
-        break;
-    }
+            case Keys::Down:
+                Blink.Reset();
+                Level--;
+                if (Level < 0)
+                    Level = 4;
+                break;
+        }
     return true;
-}
+    }
 
-bool UI_MainMenu(lcd_ui *ui, UI_Action action)
-{
-    static const char *Main_List[] = {"Detener/Reanudar", "Cambiar garrafa", "Calibracion", "Valores defecto"};
+bool UI_MainMenu(lcd_ui* ui, UI_Action action)
+    {
+    static const char* Main_List[] = { "Detener/Reanudar", "Cambiar garrafa", "Calibracion", "Valores defecto" };
     static MenuHelper Menu("Menu principal", Main_List, sizeof_menu(Main_List));
     Main_List[0] = Garrafa_Info.OnLine ? "Detener medicion" : "Retomar medicion";
 
     Menu.Run(ui, action);
 
     if (action == UI_Action::Init) {
-    } else if (action == UI_Action::Closing) {
-    }
+        }
+    else if (action == UI_Action::Closing) {
+        }
 
     switch (Menu.getItem()) {
-    case 1:
-        ui->Question.ShowQuestion("Desea continuar?", "", Screen_Question::Options::OkCancel, [](UI_DialogResult res) {
-                                      if (res == UI_DialogResult::Ok) {
-                                          if (Garrafa_Info.OnLine)
-                                              DetenerMedicion();
-                                          else
-                                              ReanudarMedicion();
-                                      } });
-        break;
-    case 2:
-        ui->Show("cambiar_garrafa");
-        break;
-    case 3:
-        ui->Show("calibrate");
-        break;
-    case 4:
-        ui->Question.ShowQuestion("Borrar todo?", "", Screen_Question::Options::OkCancel, [](UI_DialogResult res) {
-                                      if (res == UI_DialogResult::Ok) {
-                                          Settings.Default();
-                                          Settings.Save();
-                                      } });
-        break;
-        break;
-    case 5:
-        break;
-    }
+            case 1:
+                ui->Question.ShowQuestion("Desea continuar?", "", Screen_Question::Options::OkCancel, [](UI_DialogResult res) {
+                    if (res == UI_DialogResult::Ok) {
+                        if (Garrafa_Info.OnLine)
+                            DetenerMedicion();
+                        else
+                            ReanudarMedicion();
+                        } });
+                break;
+            case 2:
+                ui->Show("cambiar_garrafa");
+                break;
+            case 3:
+                ui->Show("calibrate");
+                break;
+            case 4:
+                ui->Question.ShowQuestion("Borrar todo?", "", Screen_Question::Options::OkCancel, [](UI_DialogResult res) {
+                    if (res == UI_DialogResult::Ok) {
+                        Settings.Default();
+                        Settings.Save();
+                        } });
+                break;
+                break;
+            case 5:
+                break;
+        }
     return true;
-}
+    }
 
-bool UI_Calibrate(lcd_ui *ui, UI_Action action)
-{
+bool UI_Calibrate(lcd_ui* ui, UI_Action action)
+    {
     static int8_t Step = 0;
     static float UI_Peso, UI_Offset, UI_Gain;
 
@@ -751,7 +770,8 @@ bool UI_Calibrate(lcd_ui *ui, UI_Action action)
         UI_Offset = Settings.LoadCell_Calibration.Zero;
         UI_Gain = Settings.LoadCell_Calibration.Conversion;
         Step = 0;
-    } else if (action != UI_Action::Run)
+        }
+    else if (action != UI_Action::Run)
         return false;
 
     /*
@@ -761,84 +781,87 @@ bool UI_Calibrate(lcd_ui *ui, UI_Action action)
      *		3: Compensación de temperatura
      */
     switch (Step) {
-    case 0:
-        ui->lcd->setCursor(0, 0);
-        ui->PrintText("Calibrar balanza", TextPos::Left);
-        ui->lcd->setCursor(0, 1);
-        ui->PrintText("Continuar?", TextPos::Center);
-        break;
+            case 0:
+                ui->lcd->setCursor(0, 0);
+                ui->PrintText("Calibrar balanza", TextPos::Left);
+                ui->lcd->setCursor(0, 1);
+                ui->PrintText("Continuar?", TextPos::Center);
+                break;
 
-    case 1:
-        ui->lcd->setCursor(0, 0);
-        ui->PrintText("Vacie balanza...", TextPos::Left);
-        ui->lcd->setCursor(0, 1);
-        ui->PrintText("Listo?", TextPos::Center);
-        break;
+            case 1:
+                ui->lcd->setCursor(0, 0);
+                ui->PrintText("Vacie balanza...", TextPos::Left);
+                ui->lcd->setCursor(0, 1);
+                ui->PrintText("Listo?", TextPos::Center);
+                break;
 
-    case 2:
-        ui->lcd->setCursor(0, 0);
-        ui->PrintText("Cargue peso", TextPos::Left);
-        ui->lcd->setCursor(0, 1);
-        ui->PrintText("patron... Listo?", TextPos::Center);
-        break;
+            case 2:
+                ui->lcd->setCursor(0, 0);
+                ui->PrintText("Cargue peso", TextPos::Left);
+                ui->lcd->setCursor(0, 1);
+                ui->PrintText("patron... Listo?", TextPos::Center);
+                break;
 
-    case 3:
-        if (ui->getDialogResult() == UI_DialogResult::Ok) {
-            UI_Gain = (LoadCell_Raw - UI_Offset) / UI_Peso;
-            ui->Question.ShowQuestion("Guardar datos?", "");
-            Step++;
-        } else {
-            Step--;
-        }
-        break;
+            case 3:
+                if (ui->getDialogResult() == UI_DialogResult::Ok) {
+                    UI_Gain = (LoadCell_Raw - UI_Offset) / UI_Peso;
+                    ui->Question.ShowQuestion("Guardar datos?", "");
+                    Step++;
+                    }
+                else {
+                    Step--;
+                    }
+                break;
 
-    case 4:
-        if (ui->getDialogResult() == UI_DialogResult::Ok) {
-            Settings.LoadCell_Calibration.Zero = UI_Offset;
-            Settings.LoadCell_Calibration.Conversion = UI_Gain;
-            Settings.LoadCell_Calibration.Weight = UI_Peso;
-            Settings.LoadCell_Calibration.Date = 0;
-            Settings.LoadCell_Calibration.TempCompensation.CalTemp = Temperature;
-            Settings.LoadCell_Calibration.TempCompensation.Coeff = 6.0;
-            Settings.LoadCell_Calibration.TempCompensation.Compensate = false;
-            Serial.printf("Calibracion -> Offset: %.0f, Gain: %.1f, Peso: %.3f Kg, Temp %.2t\n", UI_Offset, UI_Gain, UI_Peso, Settings.LoadCell_Calibration.TempCompensation.CalTemp);
-            Settings.Save();
-        }
-        ui->Close(ui->getDialogResult());
-        break;
-    };
+            case 4:
+                if (ui->getDialogResult() == UI_DialogResult::Ok) {
+                    Settings.LoadCell_Calibration.Zero = UI_Offset;
+                    Settings.LoadCell_Calibration.Conversion = UI_Gain;
+                    Settings.LoadCell_Calibration.Weight = UI_Peso;
+                    Settings.LoadCell_Calibration.Date = 0;
+                    Settings.LoadCell_Calibration.TempCompensation.CalTemp = Temperature;
+                    Settings.LoadCell_Calibration.TempCompensation.Coeff = 6.0;
+                    Settings.LoadCell_Calibration.TempCompensation.Compensate = false;
+                    Serial.printf("Calibracion -> Offset: %.0f, Gain: %.1f, Peso: %.3f Kg, Temp %.2t\n", UI_Offset, UI_Gain, UI_Peso, Settings.LoadCell_Calibration.TempCompensation.CalTemp);
+                    Settings.Save();
+                    }
+                ui->Close(ui->getDialogResult());
+                break;
+        };
 
     switch (ui->GetKeys()) {
-    case Keys::Enter:
-        if (Step == 0) {
-            Step++;
-        } else if (Step == 1) {
-            UI_Offset = LoadCell_Raw;
-            Step++;
-        } else if (Step == 2) {
-            ValFormat_t format(" Kg", 3);
-            ui->Show_SetVal("Peso patron:", &UI_Peso, 0, 50.0, format);
-            Step++;
+            case Keys::Enter:
+                if (Step == 0) {
+                    Step++;
+                    }
+                else if (Step == 1) {
+                    UI_Offset = LoadCell_Raw;
+                    Step++;
+                    }
+                else if (Step == 2) {
+                    ValFormat_t format(" Kg", 3);
+                    ui->Show_SetVal("Peso patron:", &UI_Peso, 0, 50.0, format);
+                    Step++;
+                    }
+                break;
+
+            case Keys::Esc:
+                if (Step == 0)
+                    ui->Close(UI_DialogResult::Cancel);
+                else
+                    Step--;
+                break;
         }
-        break;
-
-    case Keys::Esc:
-        if (Step == 0)
-            ui->Close(UI_DialogResult::Cancel);
-        else
-            Step--;
-        break;
-    }
     return true;
-}
+    }
 
-const Option Opt_Medicion[] = {Option(0, "Por tara"),
+const Option Opt_Medicion[] = { Option(0, "Por tara"),
                                Option(1, "Por peso inicial"),
-                               Option(2, "Automatico")};
+                               Option(2, "Automatico") };
 ValFormat_t format(" Kg", 2);
 
-bool UI_CambiarGarrafa(lcd_ui *ui, UI_Action action)
-{
+bool UI_CambiarGarrafa(lcd_ui* ui, UI_Action action)
+    {
     static InfoGarrafa_t Info;
     static uint32_t Time;
     static int32_t Step = 0;
@@ -848,7 +871,8 @@ bool UI_CambiarGarrafa(lcd_ui *ui, UI_Action action)
         Info.RefPesoIncial = 2;
         Step = 0;
         Time = 0;
-    } else if (action != UI_Action::Run)
+        }
+    else if (action != UI_Action::Run)
         return false;
 
     /*
@@ -861,101 +885,105 @@ bool UI_CambiarGarrafa(lcd_ui *ui, UI_Action action)
      *		6: Confirmar
      */
     switch (Step) {
-    case 0:
-        ui->lcd->setCursor(0, 0);
-        if (Settings.Garrafas.Contador == 0)
-            ui->PrintText("Instalar garrafa", TextPos::Left);
-        else
-            ui->PrintText("Cambiar garrafa", TextPos::Left);
-        ui->lcd->setCursor(0, 1);
-        ui->PrintText("Continuar?", TextPos::Center);
-        break;
+            case 0:
+                ui->lcd->setCursor(0, 0);
+                if (Settings.Garrafas.Contador == 0)
+                    ui->PrintText("Instalar garrafa", TextPos::Left);
+                else
+                    ui->PrintText("Cambiar garrafa", TextPos::Left);
+                ui->lcd->setCursor(0, 1);
+                ui->PrintText("Continuar?", TextPos::Center);
+                break;
 
-    case 1:
-        ui->lcd->setCursor(0, 0);
-        ui->PrintText("Sacar garrafa", TextPos::Left);
-        ui->lcd->setCursor(0, 1);
-        ui->PrintText("usada... Listo?", TextPos::Center);
-        break;
+            case 1:
+                ui->lcd->setCursor(0, 0);
+                ui->PrintText("Sacar garrafa", TextPos::Left);
+                ui->lcd->setCursor(0, 1);
+                ui->PrintText("usada... Listo?", TextPos::Center);
+                break;
 
-    case 2:
-        ui->lcd->setCursor(0, 0);
-        ui->PrintText("Cargue garrafa", TextPos::Left);
-        ui->lcd->setCursor(0, 1);
-        ui->PrintText("nueva...", TextPos::Center);
+            case 2:
+                ui->lcd->setCursor(0, 0);
+                ui->PrintText("Cargue garrafa", TextPos::Left);
+                ui->lcd->setCursor(0, 1);
+                ui->PrintText("nueva...", TextPos::Center);
 
-        // Una vez cargada la garrafa nueva, se pasa al siguiente paso automáticamente
-        if (LoadCell > 5.0)
-            if (millis() - Time > 3500) {
+                // Una vez cargada la garrafa nueva, se pasa al siguiente paso automáticamente
+                if (LoadCell > 5.0)
+                    if (millis() - Time > 3500) {
+                        Step++;
+                        }
+                    else
+                        Time = millis();
+                break;
+
+            case 3:
+                ui->Show_SetVal("Capacidad:", &Info.Capacidad, 5.0, 50.0, format);
                 Step++;
-            } else
-                Time = millis();
-        break;
+                break;
 
-    case 3:
-        ui->Show_SetVal("Capacidad:", &Info.Capacidad, 5.0, 50.0, format);
-        Step++;
-        break;
+            case 4:
+                ui->Show_SetVal("Tara:", &Info.Tara, 5.0, 50.0, format);
+                Step++;
+                break;
 
-    case 4:
-        ui->Show_SetVal("Tara:", &Info.Tara, 5.0, 50.0, format);
-        Step++;
-        break;
+            case 5:
+                ui->OptionBox.ShowList("Metodo medicion", (int32_t*)&Info.RefPesoIncial, Opt_Medicion, 3);
+                Step++;
+                break;
 
-    case 5:
-        ui->OptionBox.ShowList("Metodo medicion", (int32_t *)&Info.RefPesoIncial, Opt_Medicion, 3);
-        Step++;
-        break;
-
-    case 6:
-        Info.Kg_Inicial = LoadCell;
-        Info.TiempoInicio = getTime(nullptr);
-        Info.OnLine = true;
-        Info.TiempoFinal = 0;
-        if (Info.RefPesoIncial == 2) {
-            if (LoadCell > (Info.Capacidad + Info.Tara) * 1.02)
-                Info.RefPesoIncial = true;
-            else
-                Info.RefPesoIncial = false;
-        }
-        CambiarGarrafa(Info);
-        // ui->Msg.ShowMessage("Info:", "Garrafa lista!");
-        ui->Close(UI_DialogResult::Ok);
-        break;
-    };
+            case 6:
+                Info.Kg_Inicial = LoadCell;
+                Info.TiempoInicio = getTime(nullptr);
+                Info.OnLine = true;
+                Info.TiempoFinal = 0;
+                if (Info.RefPesoIncial == 2) {
+                    if (LoadCell > (Info.Capacidad + Info.Tara) * 1.02)
+                        Info.RefPesoIncial = true;
+                    else
+                        Info.RefPesoIncial = false;
+                    }
+                CambiarGarrafa(Info);
+                // ui->Msg.ShowMessage("Info:", "Garrafa lista!");
+                ui->Close(UI_DialogResult::Ok);
+                break;
+        };
 
     switch (ui->GetKeys()) {
-    case Keys::Enter:
-        if (Step == 0) {
-            DetenerMedicion(); // Detener actualización de consumo de balanza
-            Step++;
-            if (Settings.Garrafas.Contador == 0)
-                Step++;
-        } else if (Step == 1)
-            Step++;
-        else if (Step == 2)
-            Step++;
-        break;
+            case Keys::Enter:
+                if (Step == 0) {
+                    DetenerMedicion(); // Detener actualización de consumo de balanza
+                    Step++;
+                    if (Settings.Garrafas.Contador == 0)
+                        Step++;
+                    }
+                else if (Step == 1)
+                    Step++;
+                else if (Step == 2)
+                    Step++;
+                break;
 
-    case Keys::Esc:
-        if (Step == 0)
-            ui->Close(UI_DialogResult::Cancel);
-        else
-            Step--;
-        break;
-    }
+            case Keys::Esc:
+                if (Step == 0)
+                    ui->Close(UI_DialogResult::Cancel);
+                else
+                    Step--;
+                break;
+        }
     return true;
-}
+    }
 
-// Estado de actualización OTA
-bool UI_Ota(lcd_ui *ui, UI_Action action)
-{
+    // Estado de actualización OTA
+bool UI_Ota(lcd_ui* ui, UI_Action action)
+    {
     if (action == UI_Action::Init) {
         ui->lcd->clear();
         return true;
-    } else if (action == UI_Action::Closing) {
+        }
+    else if (action == UI_Action::Closing) {
         return true;
-    } else if (action != UI_Action::Run)
+        }
+    else if (action != UI_Action::Run)
         return false;
 
     ui->lcd->setCursor(0, 0);
@@ -966,10 +994,10 @@ bool UI_Ota(lcd_ui *ui, UI_Action action)
     sprintf(val, "Descarga: %.0f %%", OTA_Progress);
     ui->PrintText(val, TextPos::Center);
     return true;
-}
+    }
 
 void printLocalTime()
-{
+    {
     unsigned long Time;
 
     struct tm timeinfo;
@@ -977,14 +1005,14 @@ void printLocalTime()
     if (!getLocalTime(&timeinfo)) {
         Serial.println("Failed to obtain time");
         return;
-    }
+        }
     Time = micros() - Time;
     Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
     Serial.printf("Time: %u us\n", Time);
-}
+    }
 
 String getElapsedTime(time_t time, bool format)
-{
+    {
     int dias, horas, minutos, segundos;
     dias = time / (24 * 60 * 60);
     if (dias)
@@ -1017,38 +1045,39 @@ String getElapsedTime(time_t time, bool format)
             res += String(segundos) + " segundos ";
         else if (segundos > 0)
             res += String(segundos) + " segundo ";
-    } else {
+        }
+    else {
         char str[16];
         sprintf(str, "%02d:%02d:%02d", horas, minutos, segundos);
         res += String(str);
-    }
+        }
     res.trim();
     return res;
-}
+    }
 
 int32_t getWiFiRSSI()
-{
+    {
     wifi_ap_record_t wifidata;
     // uint64_t time = micros();
     if (esp_wifi_sta_get_ap_info(&wifidata) == 0) {
         // time = micros() - time;
         // printf("rssi:%d in %u us\n", wifidata.rssi, time);
         return wifidata.rssi;
-    }
+        }
     return 0;
-}
+    }
 
-char *getWiFiSSID()
-{
+char* getWiFiSSID()
+    {
     static wifi_ap_record_t wifidata;
     if (esp_wifi_sta_get_ap_info(&wifidata) == 0) {
-        return (char *)wifidata.ssid;
-    }
+        return (char*)wifidata.ssid;
+        }
     return nullptr;
-}
+    }
 
 char getWiFiRSSICode(int32_t RSSI)
-{
+    {
     char c = ' ';
     if (RSSI < -80)
         c = WiFiChar_RSSI_1;
@@ -1059,37 +1088,37 @@ char getWiFiRSSICode(int32_t RSSI)
     else // if (RSSI >= -60)
         c = WiFiChar_RSSI_4;
     return c;
-}
+    }
 
 char getWiFiRSSICode() { return getWiFiRSSICode(getWiFiRSSI()); }
 
-void Create_WiFi_Chars(lcd_ui *ui)
-{
-    const uint8_t wifi_Off[] = {0x0E, 0x11, 0x00, 0x0A,
-                                0x04, 0x0A, 0x00, 0x0E}; // Wifi off
-    const uint8_t wifi_Lock[] = {0x0E, 0x11, 0x11, 0x11, 0x1F, 0x1B, 0x1B, 0x1F};
-    const uint8_t wifi_1[] = {0x00, 0x00, 0x00, 0x00,
-                              0x00, 0x00, 0x00, 0x0E}; // Wifi min
-    const uint8_t wifi_2[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x0A, 0x00};
-    const uint8_t wifi_3[] = {0x00, 0x00, 0x00, 0x0E, 0x11, 0x04, 0x0A, 0x00};
-    const uint8_t wifi_4[] = {0x0E, 0x11, 0x00, 0x0E,
-                              0x11, 0x04, 0x0A, 0x00}; // Wifi max
+void Create_WiFi_Chars(lcd_ui* ui)
+    {
+    const uint8_t wifi_Off[] = { 0x0E, 0x11, 0x00, 0x0A,
+                                0x04, 0x0A, 0x00, 0x0E }; // Wifi off
+    const uint8_t wifi_Lock[] = { 0x0E, 0x11, 0x11, 0x11, 0x1F, 0x1B, 0x1B, 0x1F };
+    const uint8_t wifi_1[] = { 0x00, 0x00, 0x00, 0x00,
+                              0x00, 0x00, 0x00, 0x0E }; // Wifi min
+    const uint8_t wifi_2[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x0A, 0x00 };
+    const uint8_t wifi_3[] = { 0x00, 0x00, 0x00, 0x0E, 0x11, 0x04, 0x0A, 0x00 };
+    const uint8_t wifi_4[] = { 0x0E, 0x11, 0x00, 0x0E,
+                              0x11, 0x04, 0x0A, 0x00 }; // Wifi max
 
-    ui->lcd->createChar(0x1, (uint8_t *)wifi_Off);
-    ui->lcd->createChar(0x2, (uint8_t *)wifi_Lock);
-    ui->lcd->createChar(0x4, (uint8_t *)wifi_1);
-    ui->lcd->createChar(0x5, (uint8_t *)wifi_2);
-    ui->lcd->createChar(0x6, (uint8_t *)wifi_3);
-    ui->lcd->createChar(0x7, (uint8_t *)wifi_4);
+    ui->lcd->createChar(0x1, (uint8_t*)wifi_Off);
+    ui->lcd->createChar(0x2, (uint8_t*)wifi_Lock);
+    ui->lcd->createChar(0x4, (uint8_t*)wifi_1);
+    ui->lcd->createChar(0x5, (uint8_t*)wifi_2);
+    ui->lcd->createChar(0x6, (uint8_t*)wifi_3);
+    ui->lcd->createChar(0x7, (uint8_t*)wifi_4);
 
     Serial.printf("Create_WiFi_Chars() ok\n");
-}
+    }
 
-/*
-        Iniciar el Wifi según la configuración que se lee
-*/
+    /*
+            Iniciar el Wifi según la configuración que se lee
+    */
 void WifiStart()
-{
+    {
     WiFi.disconnect(true, true);
 
     Serial.printf("Iniciando Wifi...\n");
@@ -1104,7 +1133,7 @@ void WifiStart()
     else {
         Serial.printf("Wifi modo off\n");
         return;
-    }
+        }
 
     WiFi.onEvent(WiFiStationConnected);
 
@@ -1122,12 +1151,12 @@ void WifiStart()
         Serial.println(IPAddress(Settings.Wifi.Station.DNS2));
 
         if (WiFi.config(Settings.Wifi.Station.IP, Settings.Wifi.Station.Gateway,
-                        Settings.Wifi.Station.Mask, Settings.Wifi.Station.DNS1,
-                        Settings.Wifi.Station.DNS2))
+            Settings.Wifi.Station.Mask, Settings.Wifi.Station.DNS1,
+            Settings.Wifi.Station.DNS2))
             Serial.printf("IP iniciada correctamente!\n");
         else
             Serial.printf("Error al setear IP!\n");
-    }
+        }
 
     Serial.printf("Iniciando wifi...\nConectando a: %s...",
                   Settings.Wifi.Station.SSID);
@@ -1155,7 +1184,7 @@ void WifiStart()
         // Configuracion soft ap
         Serial.printf("Configurando el punto de acceso (AP)...");
         if (WiFi.softAP(Settings.Wifi.SoftAP.SSID, Settings.Wifi.SoftAP.Password, 1,
-                        Settings.Wifi.SoftAP.Hide_SSID))
+            Settings.Wifi.SoftAP.Hide_SSID))
             Serial.printf("Ok!\n");
         else
             Serial.printf("Error!\n");
@@ -1170,31 +1199,31 @@ void WifiStart()
             Serial.println(Settings.Wifi.SoftAP.Gateway);
 
             if (WiFi.softAPConfig(Settings.Wifi.Station.IP,
-                                  Settings.Wifi.Station.Mask,
-                                  Settings.Wifi.Station.Gateway))
+                Settings.Wifi.Station.Mask,
+                Settings.Wifi.Station.Gateway))
                 Serial.printf("IP iniciada correctamente!\n");
 
             else
                 Serial.printf("Error al setear IP!\n");
-        }
+            }
         WiFi.softAPsetHostname("Medidor de Gas AP");
         WiFi.enableAP(true);
-    }
+        }
     Serial.printf("Configuracion Wifi terminada correctamente\n\n");
 
     OTAStart();
 
     // TimeSetServer();
-}
+    }
 
-/*
-        Métodos de actualización OTA (over the air)
-*/
-void OTAStart()
-{
     /*
-            Iniciar el servicio de actualización por OTA
+            Métodos de actualización OTA (over the air)
     */
+void OTAStart()
+    {
+        /*
+                Iniciar el servicio de actualización por OTA
+        */
     if (Settings.Wifi.OTA.Enable) {
         Serial.printf("Iniciando servicio de actualización de software OTA\n");
 
@@ -1212,13 +1241,14 @@ void OTAStart()
         // ArduinoOTA.onError(OTA_onError);
 
         ArduinoOTA.begin();
-    } else {
+        }
+    else {
         ArduinoOTA.end();
+        }
     }
-}
 
 void OTA_onStart()
-{
+    {
     if (ArduinoOTA.getCommand() == U_FLASH)
         Serial.printf("Iniciando actualización de firware via OTA...\n");
     else // U_SPIFFS
@@ -1226,24 +1256,24 @@ void OTA_onStart()
             "Iniciando actualización de sistema de archivos via OTA...\n");
 
     ui.Show("wifi_ota");
-}
+    }
 
 void OTA_onEnd()
-{
+    {
     Serial.printf("Actualización terminada\n");
     ui.Close(UI_DialogResult::Ok);
-}
+    }
 
 void OTA_onProgress(uint32_t progress, uint32_t total)
-{
+    {
     OTA_Progress = (float)progress / (float)total * 100;
     // UI_Ota(&ui, UI_Action::Run);
     ui.Run();
-}
+    }
 
-char OTA_ErrorMsg[32] = {0};
+char OTA_ErrorMsg[32] = { 0 };
 void OTA_onError(ota_error_t error)
-{
+    {
     if (error == OTA_AUTH_ERROR)
         strcpy(OTA_ErrorMsg, "Error de autenticacion");
     else if (error == OTA_BEGIN_ERROR)
@@ -1258,10 +1288,10 @@ void OTA_onError(ota_error_t error)
     Serial.printf("OTA Error[%u]: %s\n", error, OTA_ErrorMsg);
 
     ui.Msg.ShowMessage("Fallo de actualizacion", OTA_ErrorMsg, 2500);
-}
+    }
 
 void TimeStart()
-{
+    {
     Serial.printf("Iniciando reloj... ");
     time_t now = Settings.Time.StartFrom;
     SetTimeTo(now); // 1/1/2020 00:00:00
@@ -1269,25 +1299,25 @@ void TimeStart()
     struct tm time = *localtime(&now);
     Serial.print(&time);
     Serial.println(" Ok!");
-}
+    }
 
 void SetTimeTo(uint32_t Secs)
-{
-    struct timeval now = {Secs, 0};
+    {
+    struct timeval now = { Secs, 0 };
     Screen_Date::setTimeZone(&Settings.Time.TimeZone);
     settimeofday(&now, nullptr);
-}
+    }
 
 void TimeSetServer()
-{
+    {
     Serial.printf("Iniciando servidor de hora %s...\n", Settings.Time.Server);
     if (Settings.Time.UpdateFromInternet == false) {
         Serial.printf(
             "La actualizacion de hora desde internet esta desactivada.\n");
         return;
-    }
-    // Setear el servidor de tiempo
-    char *tz =
+        }
+        // Setear el servidor de tiempo
+    char* tz =
         Screen_Date::setTimeZone(Settings.Time.TimeZone.tz_minuteswest * 60,
                                  Settings.Time.TimeZone.tz_dsttime * 60);
     configTzTime(tz, Settings.Time.Server);
@@ -1300,22 +1330,22 @@ void TimeSetServer()
 
             https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/system_time.html
     */
-}
+    }
 
-time_t getTime(time_t *_timer)
-{
+time_t getTime(time_t* _timer)
+    {
     time_t now = time(_timer);
     return now + (Settings.Time.TimeZone.tz_minuteswest * 60);
     // return difftime(now, Settings.Time.TimeZone.tz_minuteswest * 60);
-}
+    }
 
-/*
-        Evento de conexión de Wifi
-*/
+    /*
+            Evento de conexión de Wifi
+    */
 void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info)
-{
-    // Serial.printf("----------------Event: %d, %d\n", event,
-    // SYSTEM_EVENT_STA_CONNECTED);
+    {
+        // Serial.printf("----------------Event: %d, %d\n", event,
+        // SYSTEM_EVENT_STA_CONNECTED);
     if (event == SYSTEM_EVENT_STA_CONNECTED || event == SYSTEM_EVENT_STA_GOT_IP) {
         static char SSID[32];
         if (info.wifi_sta_connected.ssid_len > 31)
@@ -1336,5 +1366,8 @@ void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info)
 
         mqtt.begin(Settings.Mqtt.Broker, Settings.Mqtt.User,
                    Settings.Mqtt.Password);
+
+
+        initWebServer();
+        }
     }
-}
