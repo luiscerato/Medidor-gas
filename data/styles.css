@@ -1,0 +1,20 @@
+.nav_sep {
+	margin-top: 100px;
+}
+
+body {
+	font-family: 'Ubuntu', sans-serif;
+	min-width: 300px;
+}
+
+.txtEstado {
+	font-family: 'Ubuntu', sans-serif;
+	font-size: 25px;
+}
+
+@media (max-width: 500px) {
+	.txtEstado {
+		font-family: 'Ubuntu', sans-serif;
+		font-size: 18px;
+	}
+}

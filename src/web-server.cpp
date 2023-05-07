@@ -21,72 +21,88 @@ void initWebServer() {
 
 	if (WiFi.isConnected()) {
 
-  // Route for root / web page
+		//Archivos de la página web
 		server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
 			request->send(SPIFFS, "/index.html", "text/html");
 		});
 
-		// Route to load style.css file
-		server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest* request) {
-			request->send(SPIFFS, "/style.css", "text/css");
+		server.on("/styles.css", HTTP_GET, [](AsyncWebServerRequest* request) {
+			request->send(SPIFFS, "/styles.css", "text/css");
 		});
 
-		// Route to load style.css file
 		server.on("/app.js", HTTP_GET, [](AsyncWebServerRequest* request) {
 			request->send(SPIFFS, "/app.js", "text/javascript");
 		});
 
-		// Route to load style.css file
+		//Archivos de librerias
+		server.on("/src/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest* request) {
+			request->send(SPIFFS, "/src/bootstrap.bundle.min.js", "text/javascript");
+		});
+
+		server.on("/src/jquery-3.6.4.min.js", HTTP_GET, [](AsyncWebServerRequest* request) {
+			request->send(SPIFFS, "/src/jquery-3.6.4.min.js", "text/javascript");
+		});
+
+		server.on("/src/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest* request) {
+			request->send(SPIFFS, "/src/bootstrap.min.css", "text/css");
+		});
+
+
+		//Consultas API
 		server.on("/info", HTTP_GET, [](AsyncWebServerRequest* request) {
 			request->send(200, "application/json", Garrafa_Info.getJSON());
 		});
 
-		// Route to load style.css file
 		server.on("/status", HTTP_GET, [](AsyncWebServerRequest* request) {
-			request->send(200, "application/json", Garrafa_Estado.getJSON());
+			request->send(200, "application/json", getStatusJSON());
 		});
 
-		// Route to load style.css file
-		server.on("/garrafa", HTTP_GET, [](AsyncWebServerRequest* request) {
+		/*
+			Devolver información del historial de garrafas
+
+			Si no se pasan argumentos devuelve un objeto JSON con la cantidad de cambios realizados.
+			Si se pasa id, devuelve un objeto JSON con información de la garrafa indicada
+			Si se pasa page, devuelve un array JSON con información de 8 garrafas
+
+			Ej:
+			/historial?id=2
+			/historial?page=0
+		*/
+		server.on("/historial", HTTP_GET, [](AsyncWebServerRequest* request) {
 			int params = request->params();
 			if (params > 0) {
-				for (int i = 0;i < params; i++) {
-
+				AsyncWebParameter* p = request->getParam(0);
+				if (p->name() == "id") {
+					uint32_t id = p->value().toInt();
+					if (id < Settings.Garrafas.Contador) {
+						request->send(200, "application/json", Settings.Garrafas.Datos[id].getJSON());
+						}
+					}
+				else if (p->name() == "page") {		//Devolver páginas de 8 garrafas
+					int32_t page = p->value().toInt(), cant = 8, max;
+					page = constrain(page, 0, 3);
+					max = (page + 1) * cant;
 					String res = "[";
-					res += Settings.Garrafas.Datos[0].getJSON() + ",";
-					res += Settings.Garrafas.Datos[1].getJSON() + ",";
-					res += Settings.Garrafas.Datos[2].getJSON() + ",";
-					res += Settings.Garrafas.Datos[3].getJSON() + ",";
-					res += Settings.Garrafas.Datos[4].getJSON() + ",";
-					res += Settings.Garrafas.Datos[5].getJSON() + ",";
-					res += Settings.Garrafas.Datos[6].getJSON() + ",";
-					res += Settings.Garrafas.Datos[7].getJSON() + ",";
-					res += Settings.Garrafas.Datos[8].getJSON() + ",";
-					res += Settings.Garrafas.Datos[9].getJSON() + ",";
-					res += Settings.Garrafas.Datos[10].getJSON();
+					for (int x = page * cant; x < max; x++) {
+						res += Settings.Garrafas.Datos[x].getJSON();
+						if (x < (max - 1))
+							res += ",";
+						}
 					res += "]";
 
 					request->send(200, "application/json", res);
-
-					// AsyncWebParameter* p = request->getParam(i);
-					// if (p->name() == "id") {
-					// 	uint32_t id = p->value().toInt();
-					// 	if (id < Settings.Garrafas.Contador) {
-					// 		request->send(200, "application/json", Settings.Garrafas.Datos[id].getJSON());
-					// 		}
-					// 	}
-					// else
-					// 	request->send(404);
 					}
+				else
+					request->send(404, "text/plain", "no encontrado");
 				}
 			else {
 				char response[32];	//Si no hay parámetros, pasar la cantidad de garrasfas que hay
 				sprintf(response, "{\"cantidad\":%d}", Settings.Garrafas.Contador);
 				request->send(200, "application/json", String(response));
-
 				}
 		});
 
+		// Para habilitar CORS. Al simular desde un servidor local no se puede llamar a la API. Con esto se soluciona.
 		DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 		DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, PUT");
 		DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Content-Type");

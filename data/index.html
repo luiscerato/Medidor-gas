@@ -8,7 +8,7 @@
 
     <link rel="stylesheet" href="styles.css" />
 
-    <link
+    <!-- <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
       rel="stylesheet"
       integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ"
@@ -19,39 +19,110 @@
       integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
       crossorigin="anonymous"
     ></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
-    <script src="https://kit.fontawesome.com/04a594e2e2.js" crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script> -->
+
+    <script src="src/jquery-3.6.4.min.js"></script>
+    <script src="src/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="src/bootstrap.min.css" />
+
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu&display=swap" rel="stylesheet" />
   </head>
-  <body style="background-color: aqua">
-    <div class="container">
-      <div class="row" style="color: darkgreen"><h1>Medidor de gas - Servidor Web</h1></div>
-      <hr />
+  <body>
+    <nav class="navbar fixed-top navbar-expand-sm navbar-dark bg-dark pt-2 pb-2">
+      <div class="container-fluid">
+        <a class="navbar-brand"> <h2 class="nav-titulo">Medidor de gas</h2></a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNavAltMarkup"
+          aria-controls="navbarNavAltMarkup"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNavAltMarkup">
+          <div class="navbar-nav">
+            <a class="nav-link active" href="index.html">Inicio</a>
+            <a class="nav-link" href="index.html">Historial</a>
+            <a class="nav-link" href="index.html">Configuración</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container-fluid nav_sep">
       <div><h2>Estado</h2></div>
-      <div class="row" id="disponible"><h3>Disponible</h3></div>
-      <div class="row">
-        <div class="col-3" id="consumido">consumido</div>
-        <div class="col-3" id="capacidad">capacidad</div>
-        <div class="col-3" id="porc">porcentaje</div>
-      </div>
-      <div class="row">
-        <div id="cantidad"></div>
-        <table id="lista" class="table table-active">
-          <tr>
-            <td>1</td>
-          </tr>
-        </table>
-      </div>
-      <div id="info"></div>
-      <div id="status"></div>
+      <dir class="row">
+        <div class="col-md-6 col-sm-12" id="estado">
+          <div class="col">
+            <div class="txtEstado" id="medicion">En linea</div>
+            <div class="txtEstado" id="capacidad">Capacidad: 10Kg</div>
+            <div class="txtEstado" id="fecha-inicio">Puesta en linea: 25/3/2023 16:45:50</div>
+            <div class="txtEstado" id="en-linea">59 días 15:45:20</div>
+            <div class="txtEstado" id="consumido">Gas consumido: 8.10 Kg</div>
+            <div class="txtEstado" id="temperatura">Temperatura: 25.9°C</div>
+            <div class="txtEstado" id="presion">Presión: 1012.89 hPa</div>
+          </div>
+          <div class="row">
+            <div class="col mt-1">
+              <button type="button" class="btn btn-primary w-100" id="btnPausar">Pausar</button>
+            </div>
+            <div class="col mt-1">
+              <button type="button" class="btn btn-primary w-100" id="btnCambiar">Cambiar</button>
+            </div>
+            <div class="col mt-1">
+              <button type="button" class="btn btn-primary w-100" id="btnEditar">Editar</button>
+            </div>
+            <div class="col mt-1 d-none">
+              <button type="button" class="btn btn-primary w-100" id="btnTara">Poner a 0</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-sm-12 d-flex flex-column align-items-center">
+          <div class="w-100 h-100" id="grafico"></div>
+        </div>
+      </dir>
+      <div><h2>Historial de cambio de garrafas</h2></div>
+      <div class="row"></div>
     </div>
   </body>
 
   <script>
+    function drawChart(status) {
+      if (status == null) status = { disponible: 0.0 };
+
+      let grafico = google.visualization.arrayToDataTable([
+        ["Label", "Value"],
+        ["Disponible", status.disponible],
+      ]);
+
+      let options = {
+        redFrom: 0,
+        redTo: 1.0,
+        yellowFrom: 1.0,
+        yellowTo: 2.5,
+        greenFrom: 2.5,
+        yellowTo: 2.5,
+        greenTo: 10,
+        min: 0,
+        max: 10.0,
+      };
+
+      let chart = new google.visualization.Gauge(document.getElementById("grafico"));
+      chart.draw(grafico, options);
+    }
+
     function leer_garrafas(cantidad) {
       let garrafas = [];
 
       for (let id = 0; id < cantidad; id++) {
-        let url = "http://192.168.1.57/garrafa?id=" + id;
+        let url = "http://192.168.1.57/historial?page=" + id;
         console.log(url);
         $.ajax({ method: "GET", url: url }).done(function (data) {
           garrafas.push(data);
@@ -62,26 +133,50 @@
     }
 
     function leer_esp() {
-      $.ajax({ method: "GET", url: "http://192.168.1.57/status" }).done(function (data) {
-        console.log(data);
-        $("#disponible").text("Gas disponible: " + data.disponible + " Kg");
-        $("#consumido").text("Gas consumido: " + data.consumido + " Kg");
-        $("#capacidad").text("Capacidad garrafa: " + data.bruto + " Kg");
-        $("#porc").text("Capacidad garrafa: " + data.cons_porc + " %");
-      });
-
-      $.ajax({ method: "GET", url: "http://192.168.1.57/garrafa" }).done(function (data) {
+      $.ajax({ method: "GET", url: "http://192.168.1.57/historial" }).done(function (data) {
         $("#cantidad").text("Lista de garrafas: " + data.cantidad + " items");
       });
 
-      $.ajax({ method: "GET", url: "http://192.168.1.57/garrafa?id=2" }).done(function (data) {
+      $.ajax({ method: "GET", url: "http://192.168.1.57/historial?page=0" }).done(function (data) {
+        console.log(data);
+      });
+      $.ajax({ method: "GET", url: "http://192.168.1.57/historial?page=1" }).done(function (data) {
+        console.log(data);
+      });
+      $.ajax({ method: "GET", url: "http://192.168.1.57/historial?page=2" }).done(function (data) {
+        console.log(data);
+      });
+      $.ajax({ method: "GET", url: "http://192.168.1.57/historial?page=3" }).done(function (data) {
         console.log(data);
       });
     }
 
+    function updateStatus() {
+      $.ajax({ method: "GET", url: "http://192.168.1.57/status" }).done(function (status) {
+        console.log(status);
+
+        $("#medicion").text(status.estado === "online" ? "En linea" : "Medición pausada");
+        $("#capacidad").text("Capacidad garrafa: " + status.capacidad.toFixed(2) + " Kg");
+        $("#fecha-inicio").text("Fecha de cambio: ");
+        $("#en-linea").text("Tiempo en uso: " + status.online);
+        $("#consumido").text("Gas consumido: " + status.consumido.toFixed(2) + " Kg");
+        $("#temperatura").text("Temperatura: " + status.temp.toFixed(2) + " °C");
+        $("#presion").text("Presión: " + status.presion.toFixed(2) + " hPa");
+
+        $("#disponible").text("Gas disponible: " + status.disponible + " Kg");
+        $("#porc").text("Capacidad garrafa: " + status.cons_porc + " %");
+        drawChart(status);
+      });
+    }
+
     $(document).ready(function () {
+      google.charts.load("current", { packages: ["gauge"] });
+      google.charts.setOnLoadCallback(drawChart);
       leer_esp();
+      updateStatus();
       leer_garrafas(1);
+
+      setInterval(updateStatus, 2500);
     });
   </script>
 </html>

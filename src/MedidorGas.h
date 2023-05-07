@@ -219,6 +219,7 @@ void DetenerMedicion(bool save = true);
 void ReanudarMedicion(bool save = true);
 void CalcularVariables();
 void PrintListaGarrafas();
+String getStatusJSON();
 
 extern EEPROMClass SettingsData;
 /*

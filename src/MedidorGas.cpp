@@ -611,7 +611,7 @@ void PrintListaGarrafas()
     Serial.printf("%-30s | %-10s | %-15s\n", "Fecha", "Capacidad", "Duracion");
     Serial.printf("%-30s | %-10.s | %-15.s\n", "Fecha", "Peso", "Duracion");
 
-    
+
 
     // for (int i = 0; i < sizeof(Settings.Readings.List) / sizeof(Settings.Readings.List[0]); i++) {
     //     tstruct = *localtime(&Settings.Readings.List[i].Fecha);
@@ -620,6 +620,31 @@ void PrintListaGarrafas()
     //     Serial.printf("%-30s | %-10.2f | %-15.s\n", str,
     //                   Settings.Readings.List[i].Capacidad, "-");
     // }
+    }
+
+//Devolver un String() en formato JSON con el estado del medidor de gas
+String getStatusJSON() {
+    char str[512];
+
+    sprintf(str, "{\"disponible\":%.3f, \"consumido\":%.3f, \"bruto\":%.3f, "
+                 "\"disp_porc\": %.2f, \"cons_porc\": %.2f, "
+                 "\"capacidad\": %.3f, \"tara\": %.3f, "
+                 "\"estado\": \"%s\", "
+                 "\"online\": \"%s\", "
+                 "\"fin\": \"%s\", "
+                 "\"temp\": %.2f, \"presion\": %.2f, "
+                 "\"ssid\": \"%s\", \"rssi\": %d"
+                 "}",
+            Garrafa_Estado.Kg_Disponible, Garrafa_Estado.Kg_Consumido, Garrafa_Estado.Kg_Bruto,
+            Garrafa_Estado.Porc_Disponible, Garrafa_Estado.Porc_Consumido,
+            Garrafa_Info.Capacidad, Garrafa_Info.Tara,
+            Garrafa_Info.OnLine ? "online" : "stop",
+            getElapsedTime(Garrafa_Estado.TiempoEnLinea, false).c_str(),
+            getElapsedTime(Garrafa_Estado.TiempoDisponible, false).c_str(),
+            Temperature, Pressure,
+            getWiFiSSID(), getWiFiRSSI()
+    );
+    return String(str);
     }
 
 bool UI_Main(lcd_ui* ui, UI_Action action)
@@ -1136,6 +1161,7 @@ void WifiStart()
         }
 
     WiFi.onEvent(WiFiStationConnected);
+    WiFi.setSleep(false);
 
     if (Settings.Wifi.Station.StaticIP) {
         Serial.printf("Seteando dirección IP estatica... \n");
