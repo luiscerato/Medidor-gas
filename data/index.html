@@ -56,7 +56,7 @@
       </div>
     </nav>
 
-    <div class="container-fluid nav_sep">
+    <div class="container nav_sep">
       <div><h2>Estado</h2></div>
       <dir class="row">
         <div class="col-md-6 col-sm-12" id="estado">
@@ -88,13 +88,16 @@
           <div class="w-100 h-100" id="grafico"></div>
         </div>
       </dir>
-      <div><h2>Historial de cambio de garrafas</h2></div>
-      <div class="row"></div>
+      <hr />
+      <div class="row mt-2"><h2>Historial de cambio de garrafas</h2></div>
+      <div class="row mt-2">
+        <div id="historial"></div>
+      </div>
     </div>
   </body>
 
   <script>
-    function drawChart(status) {
+    function drawGauge(status) {
       if (status == null) status = { disponible: 0.0 };
 
       let grafico = google.visualization.arrayToDataTable([
@@ -118,36 +121,37 @@
       chart.draw(grafico, options);
     }
 
-    function leer_garrafas(cantidad) {
-      let garrafas = [];
+    function drawHistorial(historial) {
+      // if (status == null) status = { disponible: 0.0 };
+      let chart = new google.visualization.Timeline(document.getElementById("historial"));
+      let dataTable = new google.visualization.DataTable();
 
-      for (let id = 0; id < cantidad; id++) {
-        let url = "http://192.168.1.57/historial?page=" + id;
-        console.log(url);
-        $.ajax({ method: "GET", url: url }).done(function (data) {
-          garrafas.push(data);
-          console.log(data);
+      dataTable.addColumn({ type: "string", id: "Garrafa" });
+      dataTable.addColumn({ type: "date", id: "Start" });
+      dataTable.addColumn({ type: "date", id: "End" });
+
+      if (historial == null) {
+        dataTable.addRows([
+          ["1", new Date(1789, 3, 30), new Date(1797, 2, 4)],
+          ["2", new Date(1797, 2, 4), new Date(1801, 2, 4)],
+          ["3", new Date(1801, 2, 4), new Date(1809, 2, 4)],
+        ]);
+      } else {
+        console.log(historial);
+        let rows = [];
+        historial.forEach((element) => {
+          rows.push(["garrafa", new Date(element.inicio.date), new Date(element.fin.date)]);
         });
+        dataTable.addRows(rows);
       }
-      console.log(garrafas);
+
+      chart.draw(dataTable);
     }
 
-    function leer_esp() {
-      $.ajax({ method: "GET", url: "http://192.168.1.57/historial" }).done(function (data) {
-        $("#cantidad").text("Lista de garrafas: " + data.cantidad + " items");
-      });
-
-      $.ajax({ method: "GET", url: "http://192.168.1.57/historial?page=0" }).done(function (data) {
-        console.log(data);
-      });
-      $.ajax({ method: "GET", url: "http://192.168.1.57/historial?page=1" }).done(function (data) {
-        console.log(data);
-      });
-      $.ajax({ method: "GET", url: "http://192.168.1.57/historial?page=2" }).done(function (data) {
-        console.log(data);
-      });
-      $.ajax({ method: "GET", url: "http://192.168.1.57/historial?page=3" }).done(function (data) {
-        console.log(data);
+    function updateHistorial() {
+      $.ajax({ method: "GET", url: "http://192.168.1.57/historial?page=0" }).done(function (historial) {
+        console.log(historial);
+        drawHistorial(historial);
       });
     }
 
@@ -165,16 +169,17 @@
 
         $("#disponible").text("Gas disponible: " + status.disponible + " Kg");
         $("#porc").text("Capacidad garrafa: " + status.cons_porc + " %");
-        drawChart(status);
+        drawGauge(status);
       });
     }
 
     $(document).ready(function () {
-      google.charts.load("current", { packages: ["gauge"] });
-      google.charts.setOnLoadCallback(drawChart);
-      leer_esp();
+      google.charts.load("current", { packages: ["gauge", "timeline"] });
+      google.charts.setOnLoadCallback(drawGauge);
+      google.charts.setOnLoadCallback(drawHistorial);
+
       updateStatus();
-      leer_garrafas(1);
+      updateHistorial();
 
       setInterval(updateStatus, 2500);
     });
