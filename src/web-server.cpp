@@ -57,6 +57,18 @@ void initWebServer() {
 			request->send(200, "application/json", getStatusJSON());
 		});
 
+
+		server.on("/detener", HTTP_GET, [](AsyncWebServerRequest* request) {
+			DetenerMedicion(true);
+			request->send(200, "application/json", Garrafa_Info.getJSON());
+		});
+		
+		server.on("/iniciar", HTTP_GET, [](AsyncWebServerRequest* request) {
+			ReanudarMedicion(true);
+			request->send(200, "application/json", Garrafa_Info.getJSON());
+		});
+
+
 		/*
 			Devolver información del historial de garrafas
 

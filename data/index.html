@@ -71,7 +71,7 @@
           </div>
           <div class="row">
             <div class="col mt-1">
-              <button type="button" class="btn btn-primary w-100" id="btnPausar">Pausar</button>
+              <button type="button" class="btn btn-primary w-100" id="btnMedicion">Detener</button>
             </div>
             <div class="col mt-1">
               <button type="button" class="btn btn-primary w-100" id="btnCambiar">Cambiar</button>
@@ -89,14 +89,65 @@
         </div>
       </dir>
       <hr />
-      <div class="row mt-2"><h2>Historial de cambio de garrafas</h2></div>
+
+      <!-- Seccion de listado de historial de garrafas -->
       <div class="row mt-2">
-        <div id="historial"></div>
+        <h2>Historial de cambio de garrafas</h2>
+        <div>
+          <nav>
+            <div class="nav nav-tabs" id="nav-tab" role="tablist">
+              <button
+                class="nav-link active"
+                id="nav-grafico-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#nav-grafico"
+                type="button"
+                role="tab"
+                aria-controls="nav-grafico"
+                aria-selected="true"
+              >
+                Gráfico
+              </button>
+              <button
+                class="nav-link"
+                id="nav-lista-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#nav-lista"
+                type="button"
+                role="tab"
+                aria-controls="nav-lista"
+                aria-selected="false"
+              >
+                Listado
+              </button>
+            </div>
+          </nav>
+          <div class="tab-content" id="nav-tabContent">
+            <div class="tab-pane fade show active" id="nav-grafico" role="tabpanel" aria-labelledby="nav-grafico-tab" tabindex="0">
+              <div class="row mt-2">
+                <!-- Tab con el historial en forma de grafico -->
+                <div id="historial"></div>
+              </div>
+            </div>
+            <!-- Tab con el historial en forma de lista -->
+            <div class="tab-pane fade" id="nav-lista" role="tabpanel" aria-labelledby="nav-lista-tab" tabindex="0">
+              <div>Lista de garrafas</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- Offcanvas para editar los datos de las garrafas -->
   </body>
 
   <script>
+    google.charts.load("current", { packages: ["gauge", "timeline"] });
+    google.charts.setOnLoadCallback(function () {
+      drawGauge();
+      drawHistorial();
+    });
+
     function drawGauge(status) {
       if (status == null) status = { disponible: 0.0 };
 
@@ -140,7 +191,10 @@
         console.log(historial);
         let rows = [];
         historial.forEach((element) => {
-          rows.push(["garrafa", new Date(element.inicio.date), new Date(element.fin.date)]);
+          let inicio = new Date(element.inicio.date);
+          let fin = new Date(element.fin.date);
+          if (fin < inicio) fin = new Date(Date.now()); //Sumar un día
+          rows.push(["garrafa", inicio, fin]);
         });
         dataTable.addRows(rows);
       }
@@ -170,18 +224,33 @@
         $("#disponible").text("Gas disponible: " + status.disponible + " Kg");
         $("#porc").text("Capacidad garrafa: " + status.cons_porc + " %");
         drawGauge(status);
+
+        updateBtnMedicion(status);
       });
     }
 
-    $(document).ready(function () {
-      google.charts.load("current", { packages: ["gauge", "timeline"] });
-      google.charts.setOnLoadCallback(drawGauge);
-      google.charts.setOnLoadCallback(drawHistorial);
+    function updateBtnMedicion(status) {
+      $("#btnMedicion").text(status.estado === "online" ? "Detener" : "Iniciar");
+    }
 
+    $(document).ready(function () {
       updateStatus();
       updateHistorial();
 
       setInterval(updateStatus, 2500);
+
+      $("#btnMedicion").click(function () {
+        $("#btnMedicion").html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
+        if ($("#btnMedicion").text() == "Detener") {
+          $.ajax({ method: "GET", url: "http://192.168.1.57/detener" }).done(function (status) {
+            updateStatus();
+          });
+        } else {
+          $.ajax({ method: "GET", url: "http://192.168.1.57/iniciar" }).done(function (status) {
+            updateStatus();
+          });
+        }
+      });
     });
   </script>
 </html>

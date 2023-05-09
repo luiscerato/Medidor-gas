@@ -448,8 +448,10 @@ void CalcularVariables()
     static uint32_t Last_Time = 0, TimeOut = 0;
     char str[128];
 
-    if (!Garrafa_Info.OnLine || !LoadCell_Ready)
+    if (!Garrafa_Info.OnLine || !LoadCell_Ready) {
+        Last_Time = 0;
         return;
+        }
 
     Garrafa_Estado.Kg_Bruto = LoadCell;
     if (Garrafa_Info.RefPesoIncial) // Calcular lo consumido según el método seleccionado
@@ -542,6 +544,7 @@ void DetenerMedicion(bool save)
     Garrafa_Info.OnLine = false;
     Garrafa_Info.Kg_Final = LoadCell;
     Garrafa_Info.TiempoFinal = getTime(nullptr);
+
 
     Serial.printf("Deteniendo medicion de garrafa... \n");
 
@@ -638,7 +641,7 @@ String getStatusJSON() {
             Garrafa_Estado.Kg_Disponible, Garrafa_Estado.Kg_Consumido, Garrafa_Estado.Kg_Bruto,
             Garrafa_Estado.Porc_Disponible, Garrafa_Estado.Porc_Consumido,
             Garrafa_Info.Capacidad, Garrafa_Info.Tara,
-            Garrafa_Info.OnLine ? "online" : "stop",
+            Garrafa_Info.OnLine ? "online" : "detenido",
             getElapsedTime(Garrafa_Estado.TiempoEnLinea, false).c_str(),
             getElapsedTime(Garrafa_Estado.TiempoDisponible, false).c_str(),
             Temperature, Pressure,
