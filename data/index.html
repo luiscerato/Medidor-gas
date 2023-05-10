@@ -77,7 +77,9 @@
               <button type="button" class="btn btn-primary w-100" id="btnCambiar">Cambiar</button>
             </div>
             <div class="col mt-1">
-              <button type="button" class="btn btn-primary w-100" id="btnEditar">Editar</button>
+              <button type="button" class="btn btn-primary w-100" id="btnEditar" data-bs-toggle="offcanvas" data-bs-target="#formEdit" aria-controls="formEdit">
+                Editar
+              </button>
             </div>
             <div class="col mt-1 d-none">
               <button type="button" class="btn btn-primary w-100" id="btnTara">Poner a 0</button>
@@ -136,9 +138,65 @@
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Offcanvas para editar los datos de las garrafas -->
+      <!-- Offcanvas para editar los datos de las garrafas -->
+
+      <div class="offcanvas offcanvas-end text-bg-dark" data-bs-backdrop="static" tabindex="-1" id="formEdit" aria-labelledby="formEditLabel">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title" id="formEditLabel">Editar información de garrafa</h5>
+          <button type="button" class="btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+          <div class="text-center"><h5>Datos de garrafa</h5></div>
+          <div>
+            <label for="inputCapacidad" class="form-label">Capacidad de garrafa (Kg)</label>
+            <input type="number" class="form-control" id="inputCapacidad" min="1" max="100" placeholder="10.00" step="0.01" />
+          </div>
+          <div>
+            <label for="inputTara" class="form-label">Tara de garrafa (Kg)</label>
+            <input type="number" class="form-control" id="inputTara" min="1" max="100" placeholder="13.00" step="0.01" />
+          </div>
+          <div>
+            <div class="form-label mt-2">Metodo de medición</div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="inputMetodo" id="inputMetodoTara" />
+              <label class="form-check-label" for="inputMetodoTara"> Por tara de garrafa</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input ps-2" type="radio" name="inputMetodo" id="inputMetodoPesoInicial" checked />
+              <label class="form-check-label" for="inputMetodoPesoInicial"> Por peso inicial de garrafa </label>
+            </div>
+          </div>
+          <hr />
+          <div class="text-center"><h5>Condiciones al inicio</h5></div>
+          <div>
+            <label for="inputInicioBruto" class="form-label">Peso bruto de la garrafa (Kg)</label>
+            <input type="number" class="form-control" id="inputInicioBruto" min="1" max="100" placeholder="23.00" step="0.01" />
+          </div>
+          <div>
+            <label for="inputInicioDate" class="form-label">Fecha y hora de inicio</label>
+            <input type="datetime-local" class="form-control" id="inputInicioDate" name="inputInicioDate" />
+          </div>
+          <hr />
+          <div class="text-center"><h5>Condiciones al final</h5></div>
+          <div>
+            <label for="inputFinBruto" class="form-label">Peso bruto de la garrafa (Kg)</label>
+            <input type="number" class="form-control" id="inputFinBruto" min="1" max="100" placeholder="13.30" step="0.01" />
+          </div>
+          <div>
+            <label for="inputInicioDate" class="form-label">Fecha y hora de final</label>
+            <input type="datetime-local" class="form-control" id="inputFinDate" name="inputFinDate" />
+          </div>
+          <hr />
+          <div>
+            <div class="row">
+              <div class="col"><button type="button" class="btn btn-primary w-100" id="btnEditCancelar">Cancelar</button></div>
+              <div class="col"><button type="button" class="btn btn-primary w-100" id="btnEditGuardar">Guardar</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 
   <script>
@@ -233,6 +291,21 @@
       $("#btnMedicion").text(status.estado === "online" ? "Detener" : "Iniciar");
     }
 
+    function loadEditInfo(info) {
+      $("#inputCapacidad").val(info.capacidad.toFixed(2));
+      $("#inputTara").val(info.tara.toFixed(2));
+      $("#inputMetodoTara").prop("checked", info.metodo == "por tara");
+      $("#inputMetodoPesoInicial").prop("checked", info.metodo == "por peso inicial");
+      $("#inputInicioBruto").val(info.inicio.bruto.toFixed(3));
+      console.log(info.inicio.date);
+      console.log(new Date(info.inicio.date).toISOString());
+      console.log(new Date(info.inicio.date).toISOString().slice(0, 19));
+      console.log(new Date(info.inicio.date).toJSON().slice(0, 19));
+      $("#inputInicioDate").val(new Date(info.inicio.date).toISOString().slice(0, 19));
+      $("#inputFinBruto").val(info.fin.bruto.toFixed(3));
+      $("#inputFinDate").val(new Date(info.fin.date).toISOString().slice(0, 19));
+    }
+
     $(document).ready(function () {
       updateStatus();
       updateHistorial();
@@ -250,6 +323,12 @@
             updateStatus();
           });
         }
+      });
+
+      $("#btnEditar").click(function () {
+        $.ajax({ method: "GET", url: "http://192.168.1.57/info" }).done(function (info) {
+          loadEditInfo(info);
+        });
       });
     });
   </script>
