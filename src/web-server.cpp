@@ -2,6 +2,7 @@
 #include "MedidorGas.h"
 #include "WiFi.h"
 #include "ESPAsyncWebServer.h"
+#include <ArduinoJson.h>
 #include "SPIFFS.h"
 
 AsyncWebServer server(80);
@@ -10,6 +11,42 @@ AsyncWebServer server(80);
 extern VarGarrafa_t Garrafa_Estado;
 extern InfoGarrafa_t Garrafa_Info;
 extern Conf_t Settings;
+
+
+void onRequest(AsyncWebServerRequest* request) {
+	// dummy callback function for handling params, etc.
+	}
+
+
+void onFileUpload(AsyncWebServerRequest* request, const String& filename, size_t index, uint8_t* data, size_t len, bool final) {
+	// dummy callback function signature, not in used in our code
+	}
+
+
+void onBody(AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {
+	DynamicJsonDocument doc(512);
+	DeserializationError error = deserializeJson(doc, (char*)data);
+	InfoGarrafa_t info;
+	if (!error) {
+
+		String online = doc["online"].as<String>();
+		String metodo = doc["metodo"].as<String>();
+
+		info.OnLine = online == "online" ? true : false;
+		info.RefPesoIncial = metodo == "inicial" ? true : false;
+		info.Capacidad = doc["capacidad"];
+		info.Tara = doc["tara"];
+		info.Kg_Inicial = doc["kg_inicio"];
+		info.Kg_Final = doc["kg_fin"];
+		info.TiempoInicio = doc["tm_inicio"];
+		info.TiempoFinal = doc["tm_fin"];
+		request->send(200, "text/plain", info.getJSON());
+
+		}
+	request->send(200, "text/plain", "ok-error");
+	}
+
+
 
 
 void initWebServer() {
@@ -57,12 +94,14 @@ void initWebServer() {
 			request->send(200, "application/json", getStatusJSON());
 		});
 
+		server.on("/edit", HTTP_POST, onRequest, onFileUpload, onBody);
+
 
 		server.on("/detener", HTTP_GET, [](AsyncWebServerRequest* request) {
 			DetenerMedicion(true);
 			request->send(200, "application/json", Garrafa_Info.getJSON());
 		});
-		
+
 		server.on("/iniciar", HTTP_GET, [](AsyncWebServerRequest* request) {
 			ReanudarMedicion(true);
 			request->send(200, "application/json", Garrafa_Info.getJSON());
@@ -119,11 +158,16 @@ void initWebServer() {
 		DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, PUT");
 		DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Content-Type");
 
+		server.onNotFound([](AsyncWebServerRequest* request) {
+			request->send(404, "text/plain", "Page Not Found");
+		});
+
 		// Start server
 		server.begin();
 		}
 
 	}
+
 
 void loopWebServer() {
 
