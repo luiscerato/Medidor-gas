@@ -72,7 +72,7 @@ void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info);
 /*
         Listado de los caracteres creados con la función Create_WiFi_Chars()
 */
-enum WiFiChar: char
+enum WiFiChar : char
     {
     WiFiChar_Off = 0x1,  // Símbolo que representa el Wifi apagado
     WiFiChar_Lock,       // Símbolo que representa un candado
