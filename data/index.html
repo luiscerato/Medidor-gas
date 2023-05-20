@@ -70,6 +70,11 @@
             <div class="txtEstado" id="presion">Presión: 1012.89 hPa</div>
           </div>
           <div class="row">
+            <div class="col mt-1 mb-1">
+              <button type="button" class="btn btn-primary w-100" id="btnTime">Actualizar hora</button>
+            </div>
+          </div>
+          <div class="row">
             <div class="col mt-1">
               <button type="button" class="btn btn-primary w-100" id="btnMedicion">Detener</button>
             </div>
@@ -325,7 +330,7 @@
       setInterval(updateStatus, 2500);
 
       $("#btnMedicion").click(function () {
-        $("#btnMedicion").html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
+        // $("#btnMedicion").html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
         if ($("#btnMedicion").text() == "Detener") {
           $.ajax({ method: "GET", url: "http://192.168.1.57/detener" }).done(function (status) {
             updateStatus();
@@ -342,15 +347,21 @@
           loadEditInfo(info);
         });
       });
-
       $("#btnEditCancelar").click(function () {
         $("#btnCloseEdit").click();
+      });
+
+      $("#btnTime").click(function () {
+        let time = Math.floor(Date.now() / 1000);
+        $.ajax({ type: "POST", url: "http://192.168.1.57/time", data: time.toString() }).done(function (info) {
+          console.log(info);
+        });
       });
 
       $("#btnEditGuardar").click(function () {
         let info = {};
         info.estado = "online";
-        info.metodo = $("#inputMetodoPesoInicial").prop("checked");
+        info.metodo = $("#inputMetodoPesoInicial").prop("checked") == true ? "inicial" : "tara";
         info.capacidad = $("#inputCapacidad").val();
         info.tara = $("#inputTara").val();
         info.kg_inicio = $("#inputInicioBruto").val();
@@ -359,7 +370,7 @@
         info.tm_fin = dateHTMLToLocalEpoch($("#inputFinDate").val());
         console.log(info);
 
-        $.ajax({ type: "POST", url: "http://192.168.1.57/edit?", data: info, processData: false }).done(function (info) {
+        $.ajax({ type: "POST", url: "http://192.168.1.57/edit?id=0", data: JSON.stringify(info) }).done(function (info) {
           console.log(info);
         });
 

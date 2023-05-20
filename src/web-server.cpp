@@ -11,6 +11,7 @@ AsyncWebServer server(80);
 extern VarGarrafa_t Garrafa_Estado;
 extern InfoGarrafa_t Garrafa_Info;
 extern Conf_t Settings;
+void SetTimeTo(uint32_t Secs);
 
 
 void onRequest(AsyncWebServerRequest* request) {
@@ -94,7 +95,87 @@ void initWebServer() {
 			request->send(200, "application/json", getStatusJSON());
 		});
 
-		server.on("/edit", HTTP_POST, onRequest, onFileUpload, onBody);
+		server.on("/time", HTTP_POST, [](AsyncWebServerRequest* request) {
+			Serial.printf("params: %i\n", request->params());
+			for (int x = 0; x < request->params(); x++) {
+				Serial.printf(" p%i-> %i '%s'='%s'\n", x,
+				request->getParam(x)->isPost(),
+				request->getParam(x)->name().c_str(),
+				request->getParam(x)->value().c_str());
+				}
+			String error = "";
+			if (request->hasParam("body", true)) {
+				AsyncWebParameter* body = request->getParam("body", true);
+				Serial.printf(" '%s' = '%s'\n", body->name().c_str(), body->value().c_str());
+				int32_t time = body->value().toInt();
+				SetTimeTo(time);
+				}
+			else
+				error = "Parametro BODY faltante";
+
+			if (error != "")
+				request->send(404, "text/plain", error);
+			else
+				request->send(200, "text/plain", "ok");
+		});
+
+
+		server.on("/edit", HTTP_POST, [](AsyncWebServerRequest* request) {
+			int32_t id = 0;
+			InfoGarrafa_t info;
+			String error = "";
+
+			Serial.printf("params: %i\n", request->params());
+			for (int x = 0; x < request->params(); x++) {
+				Serial.printf(" p%i-> %i '%s'='%s'\n", x,
+				request->getParam(x)->isPost(),
+				request->getParam(x)->name().c_str(),
+				request->getParam(x)->value().c_str());
+				}
+
+			if (request->hasParam("id")) {
+				AsyncWebParameter* pid = request->getParam("id");
+				Serial.printf(" '%s' = '%s'\n", pid->name().c_str(), pid->value().c_str());
+
+				id = request->getParam("id")->value().toInt();
+				if (id < 0 || id > 31)
+					error = "ID fuera de rango [0-31]";
+				}
+
+			if (request->hasParam("body", true)) {
+				AsyncWebParameter* body = request->getParam("body", true);
+				Serial.printf(" '%s' = '%s'\n", body->name().c_str(), body->value().c_str());
+
+				DynamicJsonDocument doc(512);
+				DeserializationError err = deserializeJson(doc, body->value());
+				if (!err) {
+					String online = doc["online"].as<String>();
+					String metodo = doc["metodo"].as<String>();
+
+					info.OnLine = online == "online" ? true : false;
+					info.RefPesoIncial = metodo == "inicial" ? true : false;
+					info.Capacidad = doc["capacidad"];
+					info.Tara = doc["tara"];
+					info.Kg_Inicial = doc["kg_inicio"];
+					info.Kg_Final = doc["kg_fin"];
+					info.TiempoInicio = doc["tm_inicio"];
+					info.TiempoFinal = doc["tm_fin"];
+					}
+				else
+					error = "JSON deserialize error";
+				}
+			else
+				error = "Parametro BODY faltante";
+
+			if (error != "")
+				request->send(404, "text/plain", error);
+			else
+				request->send(200, "text/plain", info.getJSON());
+
+		// Serial.printf("args: %i\n", request->args());
+		// request->send(200, "text/plain", "ok-error");
+
+		});
 
 
 		server.on("/detener", HTTP_GET, [](AsyncWebServerRequest* request) {
