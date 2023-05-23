@@ -590,13 +590,15 @@ void CambiarGarrafa(InfoGarrafa_t Info)
     Info.TiempoFinal = 0.0;
     Info.Print(false);
 
+    int32_t max = sizeof(Settings.Garrafas.Datos) / sizeof(Settings.Garrafas.Datos[0]) - 1;
     if (Settings.Garrafas.Contador > 0) {
         Serial.printf("Actualizando lista de cambios...\n");
-        for (int i = 1; i < sizeof(Settings.Garrafas.Datos) / sizeof(Settings.Garrafas.Datos[0]); i++) {
+        for (int i = max; i > 0; i--) {
             Settings.Garrafas.Datos[i] = Settings.Garrafas.Datos[i - 1];
             }
         }
     Settings.Garrafas.Contador++;
+    if (Settings.Garrafas.Contador > max) Settings.Garrafas.Contador = max; //Limitar 
     Settings.Garrafas.Datos[0] = Info;
     Garrafa_Info = Info;
     ReanudarMedicion();

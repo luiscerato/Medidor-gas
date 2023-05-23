@@ -6,6 +6,8 @@
 #include "SPIFFS.h"
 
 AsyncWebServer server(80);
+const time_t MinDate = 1577847600L;		//Fecha mínima -> 1/1/2020 a 00:00:00
+const time_t MaxDate = 2145927600L;		//Fecha máxima -> 1/1/2038 a 00:00:00
 
 
 extern VarGarrafa_t Garrafa_Estado;
@@ -121,9 +123,10 @@ void initWebServer() {
 
 
 		server.on("/edit", HTTP_POST, [](AsyncWebServerRequest* request) {
-			int32_t id = 0;
+			int32_t id = 0;	//Apuntar siempre al primer elemento (garrafa actual)
 			InfoGarrafa_t info;
 			String error = "";
+			bool save = false;
 
 			Serial.printf("params: %i\n", request->params());
 			for (int x = 0; x < request->params(); x++) {
@@ -148,7 +151,7 @@ void initWebServer() {
 
 				DynamicJsonDocument doc(512);
 				DeserializationError err = deserializeJson(doc, body->value());
-				if (!err) {
+				if (!err || error != "") {
 					String online = doc["online"].as<String>();
 					String metodo = doc["metodo"].as<String>();
 
@@ -160,9 +163,21 @@ void initWebServer() {
 					info.Kg_Final = doc["kg_fin"];
 					info.TiempoInicio = doc["tm_inicio"];
 					info.TiempoFinal = doc["tm_fin"];
+
+					//Limitar el rango de los datos leidos.
+					info.Capacidad = constrain(info.Capacidad, 1.0, 50.0);
+					info.Tara = constrain(info.Tara, 1.0, 50.0);
+					info.Kg_Inicial = constrain(info.Kg_Inicial, 0.0, 50.0);
+					info.Kg_Final = constrain(info.Kg_Inicial, 0.0, 50.0);
+					info.TiempoInicio = constrain(info.TiempoInicio, MinDate, MaxDate);
+					info.TiempoFinal = constrain(info.TiempoFinal, info.TiempoInicio, MaxDate);
+
+					//Guardar la información recibida
+					Settings.Garrafas.Datos[id] = info;
+					save = true;
 					}
 				else
-					error = "JSON deserialize error";
+					error = "JSON deserialize error or ID out of range";
 				}
 			else
 				error = "Parametro BODY faltante";
@@ -172,9 +187,8 @@ void initWebServer() {
 			else
 				request->send(200, "text/plain", info.getJSON());
 
-		// Serial.printf("args: %i\n", request->args());
-		// request->send(200, "text/plain", "ok-error");
-
+			if (save)	//Una vez completada la ejecución, si es necesario, guardar la info
+				Settings.Save();
 		});
 
 
