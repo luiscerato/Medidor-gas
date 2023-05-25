@@ -334,7 +334,7 @@ void loop()
         if (!Vars_Ready)
             return;
 
-        static uint64_t LastTime = 0, Time;
+        static uint64_t LastTime  = 0, Time;
         static float LastVal, Diff, Consumo;
         float Val = TestFiltro.Run(LoadCell);
 
@@ -364,6 +364,7 @@ void loop()
 
         HA_TestFiltro.setValue(Val, 3);
         HA_Consumo.setValue(Consumo);
+        Garrafa_Estado.ConsumoHora = Consumo;
 
         char str[128];
         sprintf(str, "{\"LastTime\":%ul, \"Val\":%.3f, \"LastVal\":%.3f, \"Consumo\": %.2f, \"Time\": %ul}",
@@ -639,6 +640,7 @@ String getStatusJSON() {
                  "\"fin\": \"%s\", "
                  "\"temp\": %.2f, \"presion\": %.2f, "
                  "\"ssid\": \"%s\", \"rssi\": %d"
+                 "\"consumo\": \"%s\", \"rssi\": %d"
                  "}",
             Garrafa_Estado.Kg_Disponible, Garrafa_Estado.Kg_Consumido, Garrafa_Estado.Kg_Bruto,
             Garrafa_Estado.Porc_Disponible, Garrafa_Estado.Porc_Consumido,

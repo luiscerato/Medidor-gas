@@ -100,7 +100,13 @@
       <!-- Seccion de listado de historial de garrafas -->
       <div class="row mt-2">
         <h2>Historial de cambio de garrafas</h2>
-        <div>
+        <div id="historial-prog">
+          <div><h5>Cargando historial de garrafas...</h5></div>
+          <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="height: 25px">
+            <div class="progress-bar progress-bar-striped progress-bar-animated overflow-visible text-dark" style="width: 0%" id="historial-progbar"></div>
+          </div>
+        </div>
+        <div id="historial-tab">
           <nav>
             <div class="nav nav-tabs" id="nav-tab" role="tablist">
               <button
@@ -133,85 +139,85 @@
             <div class="tab-pane fade show active" id="nav-grafico" role="tabpanel" aria-labelledby="nav-grafico-tab" tabindex="0">
               <div class="row mt-2">
                 <!-- Tab con el historial en forma de grafico -->
-                <div id="historial" style="height: 600px;" </div>
+                <div id="historial" style="height: 600px;"
               </div>
             </div>
-            <!-- Tab con el historial en forma de lista -->
-            <div class="tab-pane fade" id="nav-lista" role="tabpanel" aria-labelledby="nav-lista-tab" tabindex="0">
-              <div>Lista de garrafas</div>
-            </div>
+          </div>
+          <!-- Tab con el historial en forma de lista -->
+          <div class="tab-pane fade" id="nav-lista" role="tabpanel" aria-labelledby="nav-lista-tab" tabindex="0">
+            <div>Lista de garrafas</div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Offcanvas para editar los datos de las garrafas -->
+    <!-- Offcanvas para editar los datos de las garrafas -->
 
-      <div class="offcanvas offcanvas-end text-bg-dark" data-bs-backdrop="static" tabindex="-1" id="formEdit" aria-labelledby="formEditLabel">
-        <div class="offcanvas-header">
-          <h5 class="offcanvas-title" id="formEditLabel">Editar información de garrafa</h5>
-          <button type="button" class="btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close" id="btnCloseEdit"></button>
+    <div class="offcanvas offcanvas-end text-bg-dark" data-bs-backdrop="static" tabindex="-1" id="formEdit" aria-labelledby="formEditLabel">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="formEditLabel">Editar información de garrafa</h5>
+        <button type="button" class="btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close" id="btnCloseEdit"></button>
+      </div>
+      <div class="offcanvas-body">
+        <div class="text-center"><h5>Datos de garrafa</h5></div>
+        <div>
+          <label for="inputCapacidad" class="form-label">Capacidad de garrafa</label>
+          <div class="input-group mb-3">
+            <input type="number" class="form-control" id="inputCapacidad" min="1" max="100" placeholder="10.00" step="0.01" />
+            <span class="input-group-text" id="inputCapacidad">KG</span>
+          </div>
         </div>
-        <div class="offcanvas-body">
-          <div class="text-center"><h5>Datos de garrafa</h5></div>
+        <div>
+          <label for="inputTara" class="form-label">Tara de garrafa</label>
+          <div class="input-group mb-3">
+            <input type="number" class="form-control" id="inputTara" min="1" max="100" placeholder="13.00" step="0.01" />
+            <span class="input-group-text" id="inputCapacidad">KG</span>
+          </div>
+        </div>
+        <div>
+          <div class="form-label mt-2">Metodo de medición</div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="inputMetodo" id="inputMetodoTara" />
+            <label class="form-check-label" for="inputMetodoTara"> Por tara de garrafa</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input ps-2" type="radio" name="inputMetodo" id="inputMetodoPesoInicial" checked />
+            <label class="form-check-label" for="inputMetodoPesoInicial"> Por peso inicial de garrafa </label>
+          </div>
+        </div>
+        <hr />
+        <div class="text-center"><h5>Condiciones al inicio</h5></div>
+        <div>
+          <label for="inputInicioBruto" class="form-label">Peso bruto de la garrafa</label>
+          <div class="input-group mb-3">
+            <input type="number" class="form-control" id="inputInicioBruto" min="1" max="100" placeholder="23.00" step="0.001" />
+            <span class="input-group-text" id="inputCapacidad">KG</span>
+          </div>
+        </div>
+        <div>
+          <label for="inputInicioDate" class="form-label">Fecha y hora de inicio</label>
+          <input type="datetime-local" class="form-control" id="inputInicioDate" name="inputInicioDate" />
+        </div>
+        <hr />
+        <div id="divEditDatosFinal">
+          <div class="text-center"><h5>Condiciones al final</h5></div>
           <div>
-            <label for="inputCapacidad" class="form-label">Capacidad de garrafa</label>
+            <label for="inputFinBruto" class="form-label">Peso bruto de la garrafa</label>
             <div class="input-group mb-3">
-              <input type="number" class="form-control" id="inputCapacidad" min="1" max="100" placeholder="10.00" step="0.01" />
+              <input type="number" class="form-control" id="inputFinBruto" min="1" max="100" placeholder="13.30" step="0.001" />
               <span class="input-group-text" id="inputCapacidad">KG</span>
             </div>
           </div>
           <div>
-            <label for="inputTara" class="form-label">Tara de garrafa</label>
-            <div class="input-group mb-3">
-              <input type="number" class="form-control" id="inputTara" min="1" max="100" placeholder="13.00" step="0.01" />
-              <span class="input-group-text" id="inputCapacidad">KG</span>
-            </div>
-          </div>
-          <div>
-            <div class="form-label mt-2">Metodo de medición</div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="inputMetodo" id="inputMetodoTara" />
-              <label class="form-check-label" for="inputMetodoTara"> Por tara de garrafa</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input ps-2" type="radio" name="inputMetodo" id="inputMetodoPesoInicial" checked />
-              <label class="form-check-label" for="inputMetodoPesoInicial"> Por peso inicial de garrafa </label>
-            </div>
+            <label for="inputInicioDate" class="form-label">Fecha y hora de final</label>
+            <input type="datetime-local" class="form-control" id="inputFinDate" name="inputFinDate" />
           </div>
           <hr />
-          <div class="text-center"><h5>Condiciones al inicio</h5></div>
-          <div>
-            <label for="inputInicioBruto" class="form-label">Peso bruto de la garrafa</label>
-            <div class="input-group mb-3">
-              <input type="number" class="form-control" id="inputInicioBruto" min="1" max="100" placeholder="23.00" step="0.001" />
-              <span class="input-group-text" id="inputCapacidad">KG</span>
-            </div>
-          </div>
-          <div>
-            <label for="inputInicioDate" class="form-label">Fecha y hora de inicio</label>
-            <input type="datetime-local" class="form-control" id="inputInicioDate" name="inputInicioDate" />
-          </div>
-          <hr />
-          <div id="divEditDatosFinal">
-            <div class="text-center"><h5>Condiciones al final</h5></div>
-            <div>
-              <label for="inputFinBruto" class="form-label">Peso bruto de la garrafa</label>
-              <div class="input-group mb-3">
-                <input type="number" class="form-control" id="inputFinBruto" min="1" max="100" placeholder="13.30" step="0.001" />
-                <span class="input-group-text" id="inputCapacidad">KG</span>
-              </div>
-            </div>
-            <div>
-              <label for="inputInicioDate" class="form-label">Fecha y hora de final</label>
-              <input type="datetime-local" class="form-control" id="inputFinDate" name="inputFinDate" />
-            </div>
-            <hr />
-          </div>
-          <div>
-            <div class="row">
-              <div class="col"><button type="button" class="btn btn-primary w-100" id="btnEditCancelar">Cancelar</button></div>
-              <div class="col"><button type="button" class="btn btn-primary w-100" id="btnEditGuardar">Guardar</button></div>
-            </div>
+        </div>
+        <div>
+          <div class="row">
+            <div class="col"><button type="button" class="btn btn-primary w-100" id="btnEditCancelar">Cancelar</button></div>
+            <div class="col"><button type="button" class="btn btn-primary w-100" id="btnEditGuardar">Guardar</button></div>
           </div>
         </div>
       </div>
@@ -219,71 +225,120 @@
   </body>
 
   <script>
-    google.charts.load("current", { packages: ["gauge", "timeline"] });
-    google.charts.setOnLoadCallback(function () {
-      drawGauge();
-      drawHistorial();
-    });
+    let Garrafas = { count: 0, list: [] };
+    try {
+      google.charts.load("current", { packages: ["gauge", "timeline"] });
+      google.charts.setOnLoadCallback(function () {
+        drawGauge();
+        drawHistorial();
+      });
+    } catch (error) {
+      console.log(error);
+    }
 
     function drawGauge(status) {
       if (status == null) status = { disponible: 0.0 };
+      try {
+        let grafico = google.visualization.arrayToDataTable([
+          ["Label", "Value"],
+          ["Disponible", status.disponible],
+        ]);
 
-      let grafico = google.visualization.arrayToDataTable([
-        ["Label", "Value"],
-        ["Disponible", status.disponible],
-      ]);
+        let options = {
+          redFrom: 0,
+          redTo: 1.0,
+          yellowFrom: 1.0,
+          yellowTo: 2.5,
+          greenFrom: 2.5,
+          yellowTo: 2.5,
+          greenTo: 10,
+          min: 0,
+          max: 10.0,
+        };
 
-      let options = {
-        redFrom: 0,
-        redTo: 1.0,
-        yellowFrom: 1.0,
-        yellowTo: 2.5,
-        greenFrom: 2.5,
-        yellowTo: 2.5,
-        greenTo: 10,
-        min: 0,
-        max: 10.0,
-      };
-
-      let chart = new google.visualization.Gauge(document.getElementById("grafico"));
-      chart.draw(grafico, options);
+        let chart = new google.visualization.Gauge(document.getElementById("grafico"));
+        chart.draw(grafico, options);
+      } catch (error) {
+        console.log(error);
+      }
     }
 
     function drawHistorial(historial) {
       // if (status == null) status = { disponible: 0.0 };
-      let chart = new google.visualization.Timeline(document.getElementById("historial"));
-      let dataTable = new google.visualization.DataTable();
+      try {
+        let chart = new google.visualization.Timeline(document.getElementById("historial"));
+        let dataTable = new google.visualization.DataTable();
 
-      dataTable.addColumn({ type: "string", id: "Garrafa" });
-      dataTable.addColumn({ type: "date", id: "Start" });
-      dataTable.addColumn({ type: "date", id: "End" });
+        dataTable.addColumn({ type: "string", id: "Garrafa" });
+        dataTable.addColumn({ type: "date", id: "Start" });
+        dataTable.addColumn({ type: "date", id: "End" });
 
-      if (historial == null) {
-        dataTable.addRows([
-          ["1", new Date(1789, 3, 30), new Date(1797, 2, 4)],
-          ["2", new Date(1797, 2, 4), new Date(1801, 2, 4)],
-          ["3", new Date(1801, 2, 4), new Date(1809, 2, 4)],
-        ]);
-      } else {
-        console.log(historial);
-        let rows = [];
-        historial.forEach((element) => {
-          let inicio = new Date(element.inicio.date);
-          let fin = new Date(element.fin.date);
-          if (fin < inicio) fin = new Date(Date.now()); //Sumar un día
-          rows.push(["garrafa", inicio, fin]);
-        });
-        dataTable.addRows(rows);
+        if (historial != null) {
+          console.log(historial);
+          let rows = [];
+          historial.list.forEach((element) => {
+            let inicio = new Date(element.inicio.date);
+            let fin = new Date(element.fin.date);
+            if (fin < inicio) fin = new Date(Date.now()); //Sumar un día
+            rows.push(["garrafa", inicio, fin]);
+          });
+          dataTable.addRows(rows);
+          chart.draw(dataTable);
+        }
+      } catch (error) {
+        console.log(error);
       }
-
-      chart.draw(dataTable);
     }
 
-    function updateHistorial() {
-      $.ajax({ method: "GET", url: "http://192.168.1.57/historial?page=0" }).done(function (historial) {
-        console.log(historial);
-        drawHistorial(historial);
-      });
+    function loadHistorial() {
+      Garrafas.count = 0;
+      Garrafas.list = [];
+      loadHistorial.index = 0;
+      loadHistorial.error = "";
+      loadHistorial.prog = 0;
+      loadHistorial.updateProg = () => {
+        let porc = (loadHistorial.prog / 11) * 100;
+        $("#historial-progbar").width(porc + "%");
+        console.log(porc);
+        loadHistorial.prog++;
+      };
+
+      $("#historial-progbar").width(0);
+      $("#historial-tab").hide();
+      $("#historial-prog").show();
+
+      loadHistorial.updateProg();
+      loadHistorial.timer = setInterval(function () {
+        loadHistorial.updateProg();
+        if (loadHistorial.index < 5) {
+          let param = loadHistorial.index < 4 ? "page=" + loadHistorial.index : "";
+          $.get("http://192.168.1.57/historial?" + param)
+            .done(function (data) {
+              if (param != "")
+                data.forEach((element, index) => {
+                  element.id = loadHistorial.index * 8 + index;
+                  Garrafas.list.push(element);
+                });
+              else Garrafas.count = data.cantidad;
+            })
+            .fail(() => (loadHistorial.error += "error " + loadHistorial.index + ", "))
+            .always(() => {
+              loadHistorial.index++;
+              loadHistorial.updateProg();
+            });
+        } else {
+          clearInterval(loadHistorial.timer);
+          if (loadHistorial.error != "") {
+            console.log(loadHistorial.error);
+          } else {
+            $("#historial-tab").show();
+            $("#historial-prog").hide();
+            $("#historial-progbar").width(0);
+            console.log(Garrafas);
+            drawHistorial(Garrafas);
+          }
+        }
+      }, 350);
     }
 
     function updateStatus() {
@@ -325,7 +380,7 @@
 
     $(document).ready(function () {
       updateStatus();
-      updateHistorial();
+      loadHistorial();
 
       setInterval(updateStatus, 2500);
 
