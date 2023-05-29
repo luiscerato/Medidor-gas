@@ -12,6 +12,14 @@ body {
 	font-size: 25px;
 }
 
+.selectedRow {
+	background-color: lightskyblue;
+}
+
+.imgSortHeader {
+	padding-left: 10px;
+}
+
 @media (max-width: 500px) {
 	.txtEstado {
 		font-family: 'Ubuntu', sans-serif;

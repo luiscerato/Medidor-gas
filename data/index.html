@@ -58,7 +58,7 @@
 
     <div class="container nav_sep">
       <div><h2>Estado</h2></div>
-      <dir class="row">
+      <div class="row">
         <div class="col-md-6 col-sm-12" id="estado">
           <div class="col">
             <div class="txtEstado" id="medicion">En linea</div>
@@ -94,7 +94,7 @@
         <div class="col-md-6 col-sm-12 d-flex flex-column align-items-center">
           <div class="w-100 h-100" id="grafico"></div>
         </div>
-      </dir>
+      </div>
       <hr />
 
       <!-- Seccion de listado de historial de garrafas -->
@@ -137,15 +137,18 @@
           </nav>
           <div class="tab-content" id="nav-tabContent">
             <div class="tab-pane fade show active" id="nav-grafico" role="tabpanel" aria-labelledby="nav-grafico-tab" tabindex="0">
+              <!-- Tab con el historial en forma de grafico -->
               <div class="row mt-2">
-                <!-- Tab con el historial en forma de grafico -->
-                <div id="historial" style="height: 600px;"
+                <div id="historial" style="height: 600px"></div>
               </div>
             </div>
-          </div>
-          <!-- Tab con el historial en forma de lista -->
-          <div class="tab-pane fade" id="nav-lista" role="tabpanel" aria-labelledby="nav-lista-tab" tabindex="0">
-            <div>Lista de garrafas</div>
+            <!-- Tab con el historial en forma de lista -->
+            <div class="tab-pane fade" id="nav-lista" role="tabpanel" aria-labelledby="nav-lista-tab" tabindex="0">
+              <div class="row mt-2">
+                <div id="jstabla"></div>
+                <div id="historial-tabla" style="height: 600px"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -225,12 +228,14 @@
   </body>
 
   <script>
-    let Garrafas = { count: 0, list: [] };
+    let Garrafas = { count: 0, list: [] }; //Objeto que contiene la información de las garrafas
+
     try {
-      google.charts.load("current", { packages: ["gauge", "timeline"] });
+      google.charts.load("current", { packages: ["gauge", "timeline", "table"] });
       google.charts.setOnLoadCallback(function () {
-        drawGauge();
-        drawHistorial();
+        // drawGauge();
+        // drawHistorial();
+        // drawTable();
       });
     } catch (error) {
       console.log(error);
@@ -270,17 +275,20 @@
         let dataTable = new google.visualization.DataTable();
 
         dataTable.addColumn({ type: "string", id: "Garrafa" });
+        //dataTable.addColumn({ type: "string", id: "Name" });
         dataTable.addColumn({ type: "date", id: "Start" });
         dataTable.addColumn({ type: "date", id: "End" });
 
         if (historial != null) {
           console.log(historial);
           let rows = [];
-          historial.list.forEach((element) => {
-            let inicio = new Date(element.inicio.date);
-            let fin = new Date(element.fin.date);
-            if (fin < inicio) fin = new Date(Date.now()); //Sumar un día
-            rows.push(["garrafa", inicio, fin]);
+          historial.list.forEach((element, index) => {
+            if (index < historial.count) {
+              let inicio = new Date(element.inicio.date);
+              let fin = new Date(element.fin.date);
+              if (fin < inicio) fin = new Date(Date.now()); //Sumar un día
+              rows.push(["garrafa", inicio, fin]);
+            }
           });
           dataTable.addRows(rows);
           chart.draw(dataTable);
@@ -290,6 +298,159 @@
       }
     }
 
+    function sortHistorial(historial, col, order) {
+      historial.list.sort((a, b) => {});
+    }
+
+    function drawTable1(historial, ordenarPor = "ID", reverse = false) {
+      if (historial == null) return;
+
+      //Deben ser correlativos
+      tableHeaders = ["ID", "Nombre", "Capacidad", "Tara", "Fecha inicio", "Fecha finalización", "Duración"];
+      tableOrder = ["id", "nombre", "capacidad", "tara", "inicio", "fin", "duracion"];
+      drawTable1.ordenarPor = ordenarPor;
+      drawTable1.reverse = reverse;
+
+      let keyIndex = tableHeaders.indexOf(ordenarPor);
+      if (keyIndex < 0) keyIndex = 0;
+      ordenarPorKey = tableOrder[keyIndex];
+
+      lista = historial.list.toSorted((a, b) => {
+        let res;
+        if (ordenarPorKey == "tara") res = a.tara - b.tara;
+        else if (ordenarPorKey == "nombre") res = a.name.toUpperCase().localeCompare(b.name.toUpperCase());
+        else if (ordenarPorKey == "capacidad") res = a.capacidad - b.capacidad;
+        else if (ordenarPorKey == "inicio") res = a.inicio.date - b.inicio.date;
+        else if (ordenarPorKey == "fin") res = a.fin.date - b.fin.date;
+        else if (ordenarPorKey == "duracion") res = a.duracion - b.duracion;
+        else res = a.id - b.id; //if (col == "id")
+        return reverse === true ? -res : res;
+      });
+
+      let table = $("<table></table>").addClass("table table-bordered table-striped table-hover");
+      table.attr("id", "historial-jstable");
+
+      //
+      let rowHeader = $("<tr></tr>");
+      tableHeaders.forEach((item) => {
+        header = $("<th></th>").text(item);
+        img = $('<img id="arrow" src="src/arrow-down-up.svg" />').addClass("imgSortHeader");
+        if (item == ordenarPor && reverse == true) img = $('<img id="arrow" src="src/arrow-up.svg" />').addClass("imgSortHeader");
+        else if (item == ordenarPor && reverse == false) img = $('<img id="arrow" src="src/arrow-down.svg" />').addClass("imgSortHeader");
+
+        header.append(img);
+        rowHeader.append(header);
+      });
+      table.append($("<thead></thead>").append(rowHeader));
+
+      let tbody = $("<tbody></tbody>");
+      lista.forEach((item, index) => {
+        let inicio = new Date(item.inicio.date);
+        let fin = new Date(item.fin.date);
+        let duracion = (inicio.getTime() - fin.getTime()) / (1000 * 60 * 60 * 24);
+
+        let row = $("<tr></tr>");
+        row.append($("<td></td>").text(item.id));
+        row.append($("<td></td>").text(item.name));
+        row.append($("<td></td>").text(item.capacidad.toFixed(2)));
+        row.append($("<td></td>").text(item.tara.toFixed(2)));
+        row.append($("<td></td>").text(inicio.toLocaleString()));
+        row.append($("<td></td>").text(fin.toLocaleString()));
+        row.append($("<td></td>").text(duracion.toFixed(2)));
+        tbody.append(row);
+      });
+      table.append(tbody);
+
+      $("#jstabla").html(table);
+
+      //Evento click del header
+      $("#historial-jstable th").click(function () {
+        let header = $(this).closest("th").text();
+        let reverse = !drawTable1.reverse;
+        if (drawTable1.ordenarPor != header) reverse = false;
+        drawTable1(historial, header, reverse);
+      });
+
+      //Evento click de la fila
+      $("#historial-jstable td").click(function () {
+        $(".selectedRow").removeClass("selectedRow");
+        let th = $(this).closest("tr");
+        th.addClass("selectedRow");
+        console.log($(this).closest("tr").find("td:first").text());
+      });
+    }
+
+    function drawTable(historial) {
+      try {
+        let tabla = new google.visualization.Table(document.getElementById("historial-tabla"));
+        let dataTable = new google.visualization.DataTable();
+
+        dataTable.addColumn({ type: "string", id: "ID" });
+        dataTable.addColumn({ type: "number", id: "Capacidad" });
+        dataTable.addColumn({ type: "number", id: "Tara" });
+        dataTable.addColumn({ type: "date", id: "Fecha inicio" });
+        dataTable.addColumn({ type: "date", id: "Fecha finalización" });
+        dataTable.addColumn({ type: "number", id: "Duración" });
+
+        cssClassNames = {
+          headerRow: "",
+          tableRow: "",
+          oddTableRow: "",
+          selectedTableRow: "",
+          hoverTableRow: "",
+          headerCell: "",
+          tableCell: "",
+          rowNumberCell: "",
+        };
+
+        if (historial != null) {
+          console.log(historial);
+          let rows = [];
+          historial.list.forEach((element, index) => {
+            let inicio = new Date(element.inicio.date);
+            let fin = new Date(element.fin.date);
+            if (fin < inicio) fin = new Date(Date.now());
+            let duracion = (inicio.getTime() - fin.getTime()) / (1000 * 60 * 60 * 24);
+            //Sumar un día
+            rows.push(["Garrafa " + (index + 1), element.capacidad, element.tara, inicio, fin, duracion]);
+            if (index < historial.count) {
+            }
+          });
+          let options = {
+            showRowNumber: true,
+            cssClassNames: cssClassNames,
+            width: "100%",
+            height: "100%",
+          };
+          dataTable.addRows(rows);
+
+          google.visualization.events.addListener(tabla, "ready", function () {
+            $(".google-visualization-table-table")
+              .find("*")
+              .each(function (i, e) {
+                var classList = e.className ? e.className.split(/\s+/) : [];
+                $.each(classList, function (index, item) {
+                  if (item.indexOf("google-visualization") === 0) {
+                    $(e).removeClass(item);
+                  }
+                });
+              });
+
+            $(".google-visualization-table-table")
+              .removeClass("google-visualization-table-table")
+              .addClass("table table-bordered table-striped table-condensed table-hover text-info");
+          });
+          tabla.draw(dataTable, options);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    //Lee el historial de garrafas y lo pone en el objeto garrafas.
+    /*
+    Lee el historial de garrafas y lo pone en el objeto garrafas.
+    Hace una animación de la barra de progreso de la carga y una vez finalizada la carga, muestra la gráfica
+    */
     function loadHistorial() {
       Garrafas.count = 0;
       Garrafas.list = [];
@@ -317,6 +478,10 @@
               if (param != "")
                 data.forEach((element, index) => {
                   element.id = loadHistorial.index * 8 + index;
+                  element.name = "Garrafa " + (element.id + 1).toString();
+                  element.inicio.date = new Date(element.inicio.date);
+                  element.fin.date = new Date(element.fin.date);
+                  element.duracion = (element.inicio.date.getTime() - element.fin.date.getTime()) / (1000 * 60 * 60 * 24);
                   Garrafas.list.push(element);
                 });
               else Garrafas.count = data.cantidad;
@@ -336,9 +501,11 @@
             $("#historial-progbar").width(0);
             console.log(Garrafas);
             drawHistorial(Garrafas);
+            drawTable(Garrafas);
+            drawTable1(Garrafas);
           }
         }
-      }, 350);
+      }, 150);
     }
 
     function updateStatus() {
