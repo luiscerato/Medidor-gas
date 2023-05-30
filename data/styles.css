@@ -20,6 +20,14 @@ body {
 	padding-left: 10px;
 }
 
+.btnTable {
+	margin-left: 3px;
+	padding-top: 1px !important; 
+	padding-bottom: 1px !important;
+	padding-left: 0.2rem !important;
+	padding-right: 0.2rem !important;
+}
+
 @media (max-width: 500px) {
 	.txtEstado {
 		font-family: 'Ubuntu', sans-serif;
