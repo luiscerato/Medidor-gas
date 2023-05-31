@@ -145,7 +145,7 @@
             <!-- Tab con el historial en forma de lista -->
             <div class="tab-pane fade" id="nav-lista" role="tabpanel" aria-labelledby="nav-lista-tab" tabindex="0">
               <div class="row mt-2">
-                <div id="jstabla"></div>
+                <div id="jstabla" class="table-responsive"></div>
                 <div id="historial-tabla" style="height: 600px"></div>
               </div>
             </div>
@@ -162,22 +162,41 @@
         <button type="button" class="btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close" id="btnCloseEdit"></button>
       </div>
       <div class="offcanvas-body">
-        <div class="text-center"><h5>Datos de garrafa</h5></div>
+        <div class="text-center"><h5 id="inputGarrafaName">Datos de garrafa</h5></div>
         <div>
-          <label for="inputCapacidad" class="form-label">Capacidad de garrafa</label>
+          <label for="inputCapacidad" class="form-label">Datos de garrafa:</label>
           <div class="input-group mb-3">
-            <input type="number" class="form-control" id="inputCapacidad" min="1" max="100" placeholder="10.00" step="0.01" />
-            <span class="input-group-text" id="inputCapacidad">KG</span>
+            <label class="input-group-text" for="inputCapacidad">Capacidad de garrafa</label>
+            <input type="number" class="form-control text-end" id="inputCapacidad" min="1" max="100" placeholder="10.00" step="0.01" />
+            <span style="width: 48px" class="input-group-text">KG</span>
           </div>
         </div>
         <div>
-          <label for="inputTara" class="form-label">Tara de garrafa</label>
           <div class="input-group mb-3">
-            <input type="number" class="form-control" id="inputTara" min="1" max="100" placeholder="13.00" step="0.01" />
-            <span class="input-group-text" id="inputCapacidad">KG</span>
+            <label class="input-group-text" for="inputTara">Tara de garrafa</label>
+            <input type="number" class="form-control text-end" id="inputTara" min="1" max="100" placeholder="13.00" step="0.01" />
+            <span style="width: 48px" class="input-group-text">KG</span>
           </div>
         </div>
         <div>
+          <div class="input-group mb-3">
+            <span class="input-group-text">Precio</span>
+            <input type="number" class="form-control text-end" id="inputPrecio" min="1" max="100000" placeholder="1500.00" step="1.0" />
+            <span style="width: 48px" class="input-group-text text-center">$</span>
+          </div>
+        </div>
+        <div>
+          <div class="input-group mb-3">
+            <label class="input-group-text" for="inputMetodo">Metodo de medición</label>
+            <select class="form-select" id="inputMetodo">
+              <option selected>Elegir...</option>
+              <option value="0">Por tara</option>
+              <option value="1">Por peso inicial</option>
+            </select>
+            <button style="width: 48px" class="btn btn-secondary text-center" type="button">?</button>
+          </div>
+        </div>
+        <!-- <div>
           <div class="form-label mt-2">Metodo de medición</div>
           <div class="form-check">
             <input class="form-check-input" type="radio" name="inputMetodo" id="inputMetodoTara" />
@@ -187,7 +206,7 @@
             <input class="form-check-input ps-2" type="radio" name="inputMetodo" id="inputMetodoPesoInicial" checked />
             <label class="form-check-label" for="inputMetodoPesoInicial"> Por peso inicial de garrafa </label>
           </div>
-        </div>
+        </div> -->
         <hr />
         <div class="text-center"><h5>Condiciones al inicio</h5></div>
         <div>
@@ -327,30 +346,46 @@
         return reverse === true ? -res : res;
       });
 
-      let table = $("<table></table>").addClass("table table-bordered table-striped table-hover");
+      let table = $("<table></table>").addClass("table table-bordered table-striped table-hover align-middle");
       table.attr("id", "historial-jstable");
 
       //
       let rowHeader = $("<tr></tr>");
       tableHeaders.forEach((item) => {
-        header = $("<th></th>").text(item);
-        img = $('<img id="arrow" src="src/arrow-down-up.svg" />').addClass("imgSortHeader");
-        if (item == ordenarPor && reverse == true) img = $('<img id="arrow" src="src/arrow-up.svg" />').addClass("imgSortHeader");
-        else if (item == ordenarPor && reverse == false) img = $('<img id="arrow" src="src/arrow-down.svg" />').addClass("imgSortHeader");
+        let header = $("<th></th>");
+        let img = '<img id="arrow" src="src/arrow-down-up.svg">';
+        if (item == ordenarPor && reverse == true) img = '<img id="arrow" src="src/arrow-up.svg" class="imgSortHeader">';
+        else if (item == ordenarPor && reverse == false) img = '<img id="arrow" src="src/arrow-down.svg" class="imgSortHeader">';
 
-        header.append(img);
+        header.append(
+          $('<div style="min-width: 70px">' + item + "<div>" + img + "</div></div>").addClass("d-flex align-items-center flex-row justify-content-between")
+        );
         rowHeader.append(header);
       });
       table.append($("<thead></thead>").append(rowHeader));
 
       let tbody = $("<tbody></tbody>");
       lista.forEach((item, index) => {
-        let btnEdit = '<button class="btn btn-primary btn-sm btnTable" type="button"><i class="bi bi-pencil-square"></i></button>';
-        let btnDelete = '<button class="btn btn-primary btn-sm btnTable" type="button"><i class="bi bi-file-earmark-x"></i></button>';
+        let imgDelete =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="imgDeleteRow" viewBox="0 0 16 16"><path d="M6.854 7.146a.5.5 0 1 0-.708.708L7.293 9l-1.147 1.146a.5.5 0 0 0 .708.708L8 9.707l1.146 1.147a.5.5 0 0 0 .708-.708L8.707 9l1.147-1.146a.5.5 0 0 0-.708-.708L8 8.293 6.854 7.146z"/><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/></svg>';
+        let imgEdit =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="imgEditRow" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>';
 
+        imgDelete =
+          '<div data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="This top tooltip is themed via CSS variables.">' +
+          imgDelete +
+          "</div>";
+        imgEdit = "<div>" + imgEdit + "</div>";
         let row = $("<tr></tr>");
-        let id = $("<td></td>").addClass("d-flex align-items-center flex-row justify-content-between").text(item.id);
-        id.append("<div>" + btnEdit + btnDelete + "</div>");
+        let id = $("<td></td>");
+        id.append(
+          "<div class='d-flex align-items-center flex-row justify-content-between'>" +
+            item.id.toString() +
+            '<div style="display: inline-flex;">' +
+            imgEdit +
+            imgDelete +
+            "</div></div>"
+        );
 
         row.append(id);
         row.append($("<td></td>").text(item.name));
@@ -373,12 +408,20 @@
         drawTable1(historial, header, reverse);
       });
 
-      //Evento click de la fila
-      $("#historial-jstable td").click(function () {
-        $(".selectedRow").removeClass("selectedRow");
-        let th = $(this).closest("tr");
-        th.addClass("selectedRow");
+      $(".imgEditRow").click(function () {
+        let index = $(this).closest("tr").find("td:first").text();
+        let info = historial.list[index];
+        console.log(info);
+        loadEditInfo(info);
+      });
+
+      $(".imgDeleteRow").click(function () {
         console.log($(this).closest("tr").find("td:first").text());
+      });
+
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
       });
     }
 
@@ -535,6 +578,8 @@
     }
 
     function loadEditInfo(info) {
+      $("#formEditLabel").text("Editar información de garrafa #" + info.id);
+      $("#inputGarrafaName").text(info.name);
       $("#inputCapacidad").val(info.capacidad.toFixed(2));
       $("#inputTara").val(info.tara.toFixed(2));
       $("#inputMetodoTara").prop("checked", info.metodo == "por tara");
@@ -545,6 +590,10 @@
       $("#inputFinDate").val(dateToLocalString(info.fin.date));
       if (info.estado === "online" || info.estado === "en uso") $("#divEditDatosFinal").hide();
       else $("#divEditDatosFinal").show();
+
+      var myOffcanvas = document.getElementById("formEdit");
+      var bsOffcanvas = new bootstrap.Offcanvas(myOffcanvas);
+      bsOffcanvas.show();
     }
 
     $(document).ready(function () {
@@ -571,15 +620,9 @@
           loadEditInfo(info);
         });
       });
+
       $("#btnEditCancelar").click(function () {
         $("#btnCloseEdit").click();
-      });
-
-      $("#btnTime").click(function () {
-        let time = Math.floor(Date.now() / 1000);
-        $.ajax({ type: "POST", url: "http://192.168.1.57/time", data: time.toString() }).done(function (info) {
-          console.log(info);
-        });
       });
 
       $("#btnEditGuardar").click(function () {
@@ -599,6 +642,13 @@
         });
 
         // $("#btnCloseEdit").click();
+      });
+
+      $("#btnTime").click(function () {
+        let time = Math.floor(Date.now() / 1000);
+        $.ajax({ type: "POST", url: "http://192.168.1.57/time", data: time.toString() }).done(function (info) {
+          console.log(info);
+        });
       });
     });
 
