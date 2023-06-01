@@ -152,7 +152,7 @@ void initWebServer() {
 				DynamicJsonDocument doc(512);
 				DeserializationError err = deserializeJson(doc, body->value());
 				if (!err || error != "") {
-					String online = doc["online"].as<String>();
+					String online = doc["estado"].as<String>();
 					String metodo = doc["metodo"].as<String>();
 
 					info.OnLine = online == "online" ? true : false;

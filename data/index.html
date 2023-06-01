@@ -36,6 +36,25 @@
     <nav class="navbar fixed-top navbar-expand-sm navbar-dark bg-dark pt-2 pb-2">
       <div class="container-fluid">
         <a class="navbar-brand"> <h2 class="nav-titulo">Medidor de gas</h2></a>
+
+        <form class="d-flex d-none" role="search" id="navServerIP">
+          <input
+            class="form-control me-2"
+            type="text"
+            placeholder="IP de servidor"
+            value="192.168.1.57"
+            id="inputServerIP"
+            aria-label="Search"
+            required
+            pattern="^((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])$"
+          />
+          <button class="btn btn-outline-light p-1" type="button" id="btnReloadIP">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="updateIcon" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z" />
+              <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z" />
+            </svg>
+          </button>
+        </form>
         <button
           class="navbar-toggler"
           type="button"
@@ -188,12 +207,22 @@
         <div>
           <div class="input-group mb-3">
             <label class="input-group-text" for="inputMetodo">Metodo de medición</label>
-            <select class="form-select" id="inputMetodo">
-              <option selected>Elegir...</option>
+            <select class="form-select" id="inputMetodo" value="0">
               <option value="0">Por tara</option>
               <option value="1">Por peso inicial</option>
             </select>
-            <button style="width: 48px" class="btn btn-secondary text-center" type="button">?</button>
+            <a
+              tabindex="0"
+              style="width: 48px"
+              class="btn btn-secondary text-center"
+              role="button"
+              data-bs-toggle="popover"
+              data-html="true"
+              title="Método de medición"
+              data-bs-content="Define la forma en la que se calcula el gas disponible.&#10;&#13;Por tara: para cuando ya está empezada.&#10;&#13;Por peso inicial: para cuando el peso que tiene actual es mayor al peso de la tara + la capacidad."
+            >
+              ?
+            </a>
           </div>
         </div>
         <!-- <div>
@@ -208,31 +237,37 @@
           </div>
         </div> -->
         <hr />
-        <div class="text-center"><h5>Condiciones al inicio</h5></div>
+        <div class="text-center mb-3"><h5>Valores al inicio</h5></div>
         <div>
-          <label for="inputInicioBruto" class="form-label">Peso bruto de la garrafa</label>
           <div class="input-group mb-3">
-            <input type="number" class="form-control" id="inputInicioBruto" min="1" max="100" placeholder="23.00" step="0.001" />
-            <span class="input-group-text" id="inputCapacidad">KG</span>
+            <label class="input-group-text" for="inputInicioBruto">Peso bruto</label>
+            <input type="number" class="form-control text-end" id="inputInicioBruto" min="1" max="100" placeholder="23.00" step="0.001" />
+            <span class="input-group-text" id="inputCapacidad" style="width: 48px">KG</span>
           </div>
         </div>
         <div>
-          <label for="inputInicioDate" class="form-label">Fecha y hora de inicio</label>
-          <input type="datetime-local" class="form-control" id="inputInicioDate" name="inputInicioDate" />
+          <div class="input-group mb-3">
+            <label class="input-group-text" for="inputInicioBruto">Fecha y hora</label>
+            <input type="datetime-local" class="form-control" id="inputInicioDate" name="inputInicioDate" />
+            <button class="btn btn-secondary" type="button" id="inputInicioDateBtn" style="width: 48px"><i class="bi bi-clock"></i></button>
+          </div>
         </div>
         <hr />
         <div id="divEditDatosFinal">
-          <div class="text-center"><h5>Condiciones al final</h5></div>
+          <div class="text-center mb-3"><h5>Valores al final</h5></div>
           <div>
-            <label for="inputFinBruto" class="form-label">Peso bruto de la garrafa</label>
             <div class="input-group mb-3">
-              <input type="number" class="form-control" id="inputFinBruto" min="1" max="100" placeholder="13.30" step="0.001" />
-              <span class="input-group-text" id="inputCapacidad">KG</span>
+              <label class="input-group-text" for="inputFinBruto">Peso bruto</label>
+              <input type="number" class="form-control text-end" id="inputFinBruto" min="1" max="100" placeholder="13.30" step="0.001" />
+              <span class="input-group-text" id="inputCapacidad" style="width: 48px">KG</span>
             </div>
           </div>
           <div>
-            <label for="inputInicioDate" class="form-label">Fecha y hora de final</label>
-            <input type="datetime-local" class="form-control" id="inputFinDate" name="inputFinDate" />
+            <div class="input-group mb-3">
+              <label class="input-group-text" for="inputFinDate">Fecha y hora</label>
+              <input type="datetime-local" class="form-control" id="inputFinDate" name="inputFinDate" />
+              <button class="btn btn-secondary" type="button" id="inputFinDateBtn" style="width: 48px"><i class="bi bi-clock"></i></button>
+            </div>
           </div>
           <hr />
         </div>
@@ -248,19 +283,41 @@
 
   <script>
     let Garrafas = { count: 0, list: [] }; //Objeto que contiene la información de las garrafas
+    let googleChartsReady = false;
+
+    function getUserServerIP(ip) {
+      while (ValidateIPaddress(ip) == false) ip = prompt("Ingrese la IP de placa...", "192.168.1.57");
+      localStorage.setItem("serverIP", ip);
+      return ip;
+    }
+
+    //Optener la dirección IP del servidor. Chequear si la IP está ok, sino pedir una al usuario
+    //Mas adelante comprobar la conexión con el servidor
+    let hostIP = location.hostname;
+    if (hostIP.startsWith("127.0")) {
+      document.getElementById("navServerIP").classList.remove("d-none"); //Mostrar cuadro para cargar IP
+
+      hostIP = localStorage.getItem("serverIP");
+      hostIP = getUserServerIP(hostIP);
+    } else {
+      hostIP = getUserServerIP(hostIP);
+    }
+    document.getElementById("inputServerIP").value = hostIP;
+    const serverIP = "http://" + hostIP; //IP del servidor
 
     try {
-      google.charts.load("current", { packages: ["gauge", "timeline", "table"] });
+      google.charts.load("current", { packages: ["gauge", "timeline"] });
       google.charts.setOnLoadCallback(function () {
-        // drawGauge();
-        // drawHistorial();
-        // drawTable();
+        googleChartsReady = true;
+        drawGauge();
+        drawHistorial();
       });
     } catch (error) {
       console.log(error);
     }
 
     function drawGauge(status) {
+      if (googleChartsReady == false) return;
       if (status == null) status = { disponible: 0.0 };
       try {
         let grafico = google.visualization.arrayToDataTable([
@@ -288,7 +345,7 @@
     }
 
     function drawHistorial(historial) {
-      // if (status == null) status = { disponible: 0.0 };
+      if (googleChartsReady == false) return;
       try {
         let chart = new google.visualization.Timeline(document.getElementById("historial"));
         let dataTable = new google.visualization.DataTable();
@@ -306,7 +363,7 @@
               let inicio = new Date(element.inicio.date);
               let fin = new Date(element.fin.date);
               if (fin < inicio) fin = new Date(Date.now()); //Sumar un día
-              rows.push(["garrafa", inicio, fin]);
+              rows.push([element.name, inicio, fin]);
             }
           });
           dataTable.addRows(rows);
@@ -317,18 +374,14 @@
       }
     }
 
-    function sortHistorial(historial, col, order) {
-      historial.list.sort((a, b) => {});
-    }
-
-    function drawTable1(historial, ordenarPor = "ID", reverse = false) {
+    function drawTable(historial, ordenarPor = "ID", reverse = false) {
       if (historial == null) return;
 
       //Deben ser correlativos
       tableHeaders = ["ID", "Nombre", "Capacidad", "Tara", "Fecha inicio", "Fecha finalización", "Duración"];
       tableOrder = ["id", "nombre", "capacidad", "tara", "inicio", "fin", "duracion"];
-      drawTable1.ordenarPor = ordenarPor;
-      drawTable1.reverse = reverse;
+      drawTable.ordenarPor = ordenarPor;
+      drawTable.reverse = reverse;
 
       let keyIndex = tableHeaders.indexOf(ordenarPor);
       if (keyIndex < 0) keyIndex = 0;
@@ -353,7 +406,7 @@
       let rowHeader = $("<tr></tr>");
       tableHeaders.forEach((item) => {
         let header = $("<th></th>");
-        let img = '<img id="arrow" src="src/arrow-down-up.svg">';
+        let img = '<img id="arrow" src="src/arrow-down-up.svg" class="imgSortHeader">';
         if (item == ordenarPor && reverse == true) img = '<img id="arrow" src="src/arrow-up.svg" class="imgSortHeader">';
         else if (item == ordenarPor && reverse == false) img = '<img id="arrow" src="src/arrow-down.svg" class="imgSortHeader">';
 
@@ -403,9 +456,9 @@
       //Evento click del header
       $("#historial-jstable th").click(function () {
         let header = $(this).closest("th").text();
-        let reverse = !drawTable1.reverse;
-        if (drawTable1.ordenarPor != header) reverse = false;
-        drawTable1(historial, header, reverse);
+        let reverse = !drawTable.reverse;
+        if (drawTable.ordenarPor != header) reverse = false;
+        drawTable(historial, header, reverse);
       });
 
       $(".imgEditRow").click(function () {
@@ -425,72 +478,6 @@
       });
     }
 
-    function drawTable(historial) {
-      try {
-        let tabla = new google.visualization.Table(document.getElementById("historial-tabla"));
-        let dataTable = new google.visualization.DataTable();
-
-        dataTable.addColumn({ type: "string", id: "ID" });
-        dataTable.addColumn({ type: "number", id: "Capacidad" });
-        dataTable.addColumn({ type: "number", id: "Tara" });
-        dataTable.addColumn({ type: "date", id: "Fecha inicio" });
-        dataTable.addColumn({ type: "date", id: "Fecha finalización" });
-        dataTable.addColumn({ type: "number", id: "Duración" });
-
-        cssClassNames = {
-          headerRow: "",
-          tableRow: "",
-          oddTableRow: "",
-          selectedTableRow: "",
-          hoverTableRow: "",
-          headerCell: "",
-          tableCell: "",
-          rowNumberCell: "",
-        };
-
-        if (historial != null) {
-          console.log(historial);
-          let rows = [];
-          historial.list.forEach((element, index) => {
-            let inicio = new Date(element.inicio.date);
-            let fin = new Date(element.fin.date);
-            if (fin < inicio) fin = new Date(Date.now());
-            let duracion = (inicio.getTime() - fin.getTime()) / (1000 * 60 * 60 * 24);
-            //Sumar un día
-            rows.push(["Garrafa " + (index + 1), element.capacidad, element.tara, inicio, fin, duracion]);
-            if (index < historial.count) {
-            }
-          });
-          let options = {
-            showRowNumber: true,
-            cssClassNames: cssClassNames,
-            width: "100%",
-            height: "100%",
-          };
-          dataTable.addRows(rows);
-
-          google.visualization.events.addListener(tabla, "ready", function () {
-            $(".google-visualization-table-table")
-              .find("*")
-              .each(function (i, e) {
-                var classList = e.className ? e.className.split(/\s+/) : [];
-                $.each(classList, function (index, item) {
-                  if (item.indexOf("google-visualization") === 0) {
-                    $(e).removeClass(item);
-                  }
-                });
-              });
-
-            $(".google-visualization-table-table")
-              .removeClass("google-visualization-table-table")
-              .addClass("table table-bordered table-striped table-condensed table-hover text-info");
-          });
-          tabla.draw(dataTable, options);
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    }
     //Lee el historial de garrafas y lo pone en el objeto garrafas.
     /*
     Lee el historial de garrafas y lo pone en el objeto garrafas.
@@ -505,7 +492,6 @@
       loadHistorial.updateProg = () => {
         let porc = (loadHistorial.prog / 11) * 100;
         $("#historial-progbar").width(porc + "%");
-        console.log(porc);
         loadHistorial.prog++;
       };
 
@@ -518,15 +504,17 @@
         loadHistorial.updateProg();
         if (loadHistorial.index < 5) {
           let param = loadHistorial.index < 4 ? "page=" + loadHistorial.index : "";
-          $.get("http://192.168.1.57/historial?" + param)
+          $.get(serverIP + "/historial?" + param)
             .done(function (data) {
               if (param != "")
                 data.forEach((element, index) => {
                   element.id = loadHistorial.index * 8 + index;
                   element.name = "Garrafa " + (element.id + 1).toString();
+                  element.precio = 0.0; //Todo: sacar esto y dejar el valor que devuelve la API
                   element.inicio.date = new Date(element.inicio.date);
                   element.fin.date = new Date(element.fin.date);
-                  element.duracion = (element.inicio.date.getTime() - element.fin.date.getTime()) / (1000 * 60 * 60 * 24);
+                  element.duracion = (element.fin.date.getTime() - element.inicio.date.getTime()) / (1000 * 60 * 60 * 24);
+                  if (element.duracion < 0) element.duracion = 0;
                   Garrafas.list.push(element);
                 });
               else Garrafas.count = data.cantidad;
@@ -538,23 +526,23 @@
             });
         } else {
           clearInterval(loadHistorial.timer);
+          $("#historial-tab").show();
+          $("#historial-prog").hide();
+          $("#historial-progbar").width(0);
           if (loadHistorial.error != "") {
             console.log(loadHistorial.error);
+            alert("Ocurrió un error al cargar el historial -> " + loadHistorial.error);
           } else {
-            $("#historial-tab").show();
-            $("#historial-prog").hide();
-            $("#historial-progbar").width(0);
             console.log(Garrafas);
             drawHistorial(Garrafas);
             drawTable(Garrafas);
-            drawTable1(Garrafas);
           }
         }
       }, 150);
     }
 
     function updateStatus() {
-      $.ajax({ method: "GET", url: "http://192.168.1.57/status" }).done(function (status) {
+      $.ajax({ method: "GET", url: serverIP + "/status" }).done(function (status) {
         console.log(status);
 
         $("#medicion").text(status.estado === "online" ? "En linea" : "Medición pausada");
@@ -578,12 +566,13 @@
     }
 
     function loadEditInfo(info) {
+      loadEditInfo.info = info;
       $("#formEditLabel").text("Editar información de garrafa #" + info.id);
       $("#inputGarrafaName").text(info.name);
       $("#inputCapacidad").val(info.capacidad.toFixed(2));
+      $("#inputPrecio").val(info.precio.toFixed(2));
       $("#inputTara").val(info.tara.toFixed(2));
-      $("#inputMetodoTara").prop("checked", info.metodo == "por tara");
-      $("#inputMetodoPesoInicial").prop("checked", info.metodo == "por peso inicial");
+      $("#inputMetodo").val(info.metodo == "por tara" ? 0 : 1);
       $("#inputInicioBruto").val(info.inicio.bruto.toFixed(3));
       $("#inputInicioDate").val(dateToLocalString(info.inicio.date));
       $("#inputFinBruto").val(info.fin.bruto.toFixed(3));
@@ -605,18 +594,18 @@
       $("#btnMedicion").click(function () {
         // $("#btnMedicion").html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
         if ($("#btnMedicion").text() == "Detener") {
-          $.ajax({ method: "GET", url: "http://192.168.1.57/detener" }).done(function (status) {
+          $.ajax({ method: "GET", url: serverIP + "/detener" }).done(function (status) {
             updateStatus();
           });
         } else {
-          $.ajax({ method: "GET", url: "http://192.168.1.57/iniciar" }).done(function (status) {
+          $.ajax({ method: "GET", url: serverIP + "/iniciar" }).done(function (status) {
             updateStatus();
           });
         }
       });
 
       $("#btnEditar").click(function () {
-        $.ajax({ method: "GET", url: "http://192.168.1.57/info" }).done(function (info) {
+        $.ajax({ method: "GET", url: serverIP + "/info" }).done(function (info) {
           loadEditInfo(info);
         });
       });
@@ -626,18 +615,21 @@
       });
 
       $("#btnEditGuardar").click(function () {
-        let info = {};
-        info.estado = "online";
-        info.metodo = $("#inputMetodoPesoInicial").prop("checked") == true ? "inicial" : "tara";
+        let info = {}; //Cargar los datos que están en la prop info de la función que cargó los datos
+        info.id = loadEditInfo.info.id;
+        info.name = $("#inputGarrafaName").text();
+        info.estado = loadEditInfo.info.estado;
+        info.metodo = $("#inputMetodo").val() == 0 ? "tara" : "inicial";
         info.capacidad = $("#inputCapacidad").val();
         info.tara = $("#inputTara").val();
+        info.precio = $("#inputPrecio").val();
         info.kg_inicio = $("#inputInicioBruto").val();
         info.kg_fin = $("#inputFinBruto").val();
         info.tm_inicio = dateHTMLToLocalEpoch($("#inputInicioDate").val());
         info.tm_fin = dateHTMLToLocalEpoch($("#inputFinDate").val());
         console.log(info);
 
-        $.ajax({ type: "POST", url: "http://192.168.1.57/edit?id=0", data: JSON.stringify(info) }).done(function (info) {
+        $.ajax({ type: "POST", url: serverIP + "/edit?id=" + info.id, data: JSON.stringify(info) }).done(function (info) {
           console.log(info);
         });
 
@@ -646,9 +638,30 @@
 
       $("#btnTime").click(function () {
         let time = Math.floor(Date.now() / 1000);
-        $.ajax({ type: "POST", url: "http://192.168.1.57/time", data: time.toString() }).done(function (info) {
+        $.ajax({ type: "POST", url: serverIP + "/time", data: time.toString() }).done(function (info) {
           console.log(info);
         });
+      });
+
+      $("#btnReloadIP").click(function () {
+        let ip = $("#inputServerIP").val();
+        if (ValidateIPaddress(ip) == true) {
+          $("#inputServerIP").addClass("border-success");
+          localStorage.setItem("serverIP", ip);
+          window.location.reload(true); //Recargar la página
+        } else {
+          $("#inputServerIP").addClass("border-danger");
+          alert("Ingrese una dirección IP válida");
+        }
+      });
+
+      //Para activar los popovers
+      $(function () {
+        $('[data-bs-toggle="popover"]').popover();
+      });
+
+      $(".popover-dismiss").popover({
+        trigger: "focus",
       });
     });
 
@@ -665,6 +678,17 @@
       let local = new Date(date);
       local.setMinutes(date.getMinutes() - date.getTimezoneOffset());
       return Math.round(local.getTime() / 1000);
+    }
+
+    function ValidateIPaddress(ipaddress) {
+      if (
+        /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(
+          ipaddress
+        )
+      ) {
+        return true;
+      }
+      return false;
     }
   </script>
 </html>
