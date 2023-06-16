@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Permitir cargar contenido http sobre https -->
+    <!-- <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" /> -->
     <title>Medidor de gas - web server</title>
 
     <link rel="stylesheet" href="styles.css" />
@@ -28,9 +30,6 @@
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
-    <link href="https://fonts.googleapis.com/css2?family=Ubuntu&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
   </head>
   <body>
     <nav class="navbar fixed-top navbar-expand-sm navbar-dark bg-dark pt-2 pb-2">
@@ -77,17 +76,17 @@
     </nav>
 
     <div class="container nav_sep">
-      <div><h2>Estado</h2></div>
-      <div class="row">
-        <div class="col-md-6 col-sm-12" id="estado">
+      <div id="txtEstado" class="d-flex"><h2>Estado</h2></div>
+      <div class="row" id="divEstado">
+        <div class="col-md-6 col-sm-12" id="areaEstado">
           <div class="col">
             <div class="txtEstado" id="medicion">En linea</div>
-            <div class="txtEstado" id="capacidad">Capacidad: 10Kg</div>
-            <div class="txtEstado" id="fecha-inicio">Puesta en linea: 25/3/2023 16:45:50</div>
-            <div class="txtEstado" id="en-linea">59 días 15:45:20</div>
-            <div class="txtEstado" id="consumido">Gas consumido: 8.10 Kg</div>
-            <div class="txtEstado" id="temperatura">Temperatura: 25.9°C</div>
-            <div class="txtEstado" id="presion">Presión: 1012.89 hPa</div>
+            <div class="txtEstado" id="capacidad">Capacidad:</div>
+            <div class="txtEstado" id="fecha-inicio">Puesta en linea:</div>
+            <div class="txtEstado" id="en-linea">Duración</div>
+            <div class="txtEstado" id="consumido">Gas consumido:</div>
+            <div class="txtEstado" id="temperatura">Temperatura:</div>
+            <div class="txtEstado" id="presion">Presión:</div>
           </div>
           <div class="row">
             <div class="col mt-1 mb-1">
@@ -112,7 +111,7 @@
           </div>
         </div>
         <div class="col-md-6 col-sm-12 d-flex flex-column align-items-center">
-          <div class="w-100 h-100" id="grafico"></div>
+          <div class="" id="grafico"></div>
         </div>
       </div>
       <hr />
@@ -165,7 +164,7 @@
             <div class="tab-pane fade" id="nav-lista" role="tabpanel" aria-labelledby="nav-lista-tab" tabindex="0">
               <div class="row mt-2">
                 <div id="jstabla" class="table-responsive"></div>
-                <div id="historial-tabla" style="height: 600px"></div>
+                <div id="historial-tabla"></div>
               </div>
             </div>
           </div>
@@ -283,30 +282,25 @@
 
   <script>
     let Garrafas = { count: 0, list: [] }; //Objeto que contiene la información de las garrafas
+    let Estado = {}; //Objeto que contiene el estado del medidor de gas
     let googleChartsReady = false;
 
-    function getUserServerIP(ip) {
-      while (ValidateIPaddress(ip) == false) ip = prompt("Ingrese la IP de placa...", "192.168.1.57");
-      localStorage.setItem("serverIP", ip);
-      return ip;
-    }
-
-    //Optener la dirección IP del servidor. Chequear si la IP está ok, sino pedir una al usuario
+    //Optener la dirección IP del servidor.
     //Mas adelante comprobar la conexión con el servidor
-    let hostIP = location.hostname;
-    if (hostIP.startsWith("127.0")) {
+    let hostIP = location.href;
+    if (location.hostname.startsWith("127.0")) {
       document.getElementById("navServerIP").classList.remove("d-none"); //Mostrar cuadro para cargar IP
-
       hostIP = localStorage.getItem("serverIP");
-      hostIP = getUserServerIP(hostIP);
-    } else {
-      hostIP = getUserServerIP(hostIP);
+    } else if (localStorage.getItem("serverIP") != hostIP) {
+      //Si hay una configuración guardada, cargarla
+      // let setting = localStorage.getItem("serverIP");
+      // if (setting != "null") hostIP = setting;
     }
     document.getElementById("inputServerIP").value = hostIP;
-    const serverIP = "http://" + hostIP; //IP del servidor
+    const serverIP = hostIP; //IP del servidor
 
     try {
-      google.charts.load("current", { packages: ["gauge", "timeline"] });
+      google.charts.load("current", { packages: ["gauge", "timeline"], language: "es" });
       google.charts.setOnLoadCallback(function () {
         googleChartsReady = true;
         drawGauge();
@@ -316,58 +310,84 @@
       console.log(error);
     }
 
-    function drawGauge(status) {
+    function drawGauge() {
       if (googleChartsReady == false) return;
-      if (status == null) status = { disponible: 0.0 };
       try {
-        let grafico = google.visualization.arrayToDataTable([
+        let dataTable = google.visualization.arrayToDataTable([
           ["Label", "Value"],
-          ["Disponible", status.disponible],
+          ["Gas", Estado.disponible],
         ]);
+        let formatter = new google.visualization.NumberFormat({ suffix: " Kg", pattern: "0.00" });
+        formatter.format(dataTable, 1);
+
+        if (Estado.capacidad == null) Estado.capacidad = 10.0;
+        let Ticks = [];
+        for (let x = 0; x <= Estado.capacidad; x += Estado.capacidad / 5) {
+          Ticks.push(x.toString() + "Kg");
+        }
+
+        let size = $("#areaEstado").height();
+        if (size > $("#areaEstado").width()) size = $("#areaEstado").width();
+        if (size < 100 || size == null) size = 200;
 
         let options = {
           redFrom: 0,
-          redTo: 1.0,
-          yellowFrom: 1.0,
-          yellowTo: 2.5,
-          greenFrom: 2.5,
-          yellowTo: 2.5,
-          greenTo: 10,
+          redTo: Estado.capacidad * 0.1,
+          yellowFrom: Estado.capacidad * 0.1,
+          yellowTo: Estado.capacidad * 0.25,
+          greenFrom: Estado.capacidad * 0.25,
+          greenTo: Estado.capacidad,
           min: 0,
-          max: 10.0,
+          max: Estado.capacidad,
+          majorTicks: Ticks,
+          minorTicks: 4,
+          width: size,
+          height: size,
         };
 
         let chart = new google.visualization.Gauge(document.getElementById("grafico"));
-        chart.draw(grafico, options);
+        chart.draw(dataTable, options);
       } catch (error) {
         console.log(error);
       }
     }
 
-    function drawHistorial(historial) {
+    function drawHistorial() {
       if (googleChartsReady == false) return;
       try {
         let chart = new google.visualization.Timeline(document.getElementById("historial"));
         let dataTable = new google.visualization.DataTable();
+        drawHistorial.width = $("#historial").width();
 
-        dataTable.addColumn({ type: "string", id: "Garrafa" });
-        //dataTable.addColumn({ type: "string", id: "Name" });
-        dataTable.addColumn({ type: "date", id: "Start" });
-        dataTable.addColumn({ type: "date", id: "End" });
+        dataTable.addColumn({ type: "string", id: "ID" });
+        dataTable.addColumn({ type: "string", id: "Nombre" });
+        dataTable.addColumn({ type: "string", role: "tooltip" });
+        dataTable.addColumn({ type: "date", id: "Inicio" });
+        dataTable.addColumn({ type: "date", id: "Fin" });
 
-        if (historial != null) {
-          console.log(historial);
+        if (Garrafas.list.length > 0) {
+          console.log(Garrafas);
           let rows = [];
-          historial.list.forEach((element, index) => {
-            if (index < historial.count) {
-              let inicio = new Date(element.inicio.date);
-              let fin = new Date(element.fin.date);
-              if (fin < inicio) fin = new Date(Date.now()); //Sumar un día
-              rows.push([element.name, inicio, fin]);
+          Garrafas.list.forEach((element, index) => {
+            if (index < Garrafas.count) {
+              let tooltip = '<div class="card text-bg-dark">';
+              tooltip += '<div class="card-header">Información de ' + element.name + " id#" + element.id + "</div>";
+              tooltip += '<div class="card-body">';
+              tooltip += '<div class="card-text">Fecha inicio: ' + element.inicio.date.toLocaleString() + "</div>";
+              tooltip += '<div class="card-text">Fecha finalización: ' + element.fin.date.toLocaleString() + "</div>";
+              tooltip += '<div class="card-text">Duración: ' + element.duracion.toFixed(1) + " días</div>";
+              tooltip += '<div class="card-text">Precio: $' + element.precio.toFixed(2) + "</div>";
+              tooltip += "</div></div>";
+              rows.push([element.id.toString(), element.name, tooltip, element.inicio.date, element.fin.date]);
             }
           });
           dataTable.addRows(rows);
-          chart.draw(dataTable);
+          chart.draw(dataTable, {
+            tooltip: {
+              isHtml: true,
+              trigger: "focus",
+            },
+          });
         }
       } catch (error) {
         console.log(error);
@@ -406,9 +426,14 @@
       let rowHeader = $("<tr></tr>");
       tableHeaders.forEach((item) => {
         let header = $("<th></th>");
-        let img = '<img id="arrow" src="src/arrow-down-up.svg" class="imgSortHeader">';
-        if (item == ordenarPor && reverse == true) img = '<img id="arrow" src="src/arrow-up.svg" class="imgSortHeader">';
-        else if (item == ordenarPor && reverse == false) img = '<img id="arrow" src="src/arrow-down.svg" class="imgSortHeader">';
+        let img =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="imgSortHeader" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.5 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L11 2.707V14.5a.5.5 0 0 0 .5.5zm-7-14a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L4 13.293V1.5a.5.5 0 0 1 .5-.5z"/></svg>';
+        if (item == ordenarPor && reverse == true)
+          img =
+            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="imgSortHeader" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L7.5 2.707V14.5a.5.5 0 0 0 .5.5z"/></svg>';
+        else if (item == ordenarPor && reverse == false)
+          img =
+            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="imgSortHeader" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z"/></svg>';
 
         header.append(
           $('<div style="min-width: 70px">' + item + "<div>" + img + "</div></div>").addClass("d-flex align-items-center flex-row justify-content-between")
@@ -419,16 +444,20 @@
 
       let tbody = $("<tbody></tbody>");
       lista.forEach((item, index) => {
+        if (index > historial.count) return;
         let imgDelete =
           '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="imgDeleteRow" viewBox="0 0 16 16"><path d="M6.854 7.146a.5.5 0 1 0-.708.708L7.293 9l-1.147 1.146a.5.5 0 0 0 .708.708L8 9.707l1.146 1.147a.5.5 0 0 0 .708-.708L8.707 9l1.147-1.146a.5.5 0 0 0-.708-.708L8 8.293 6.854 7.146z"/><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/></svg>';
         let imgEdit =
           '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="imgEditRow" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>';
 
         imgDelete =
-          '<div data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="This top tooltip is themed via CSS variables.">' +
+          '<div data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="Elimina la garrafa del registro">' +
           imgDelete +
           "</div>";
-        imgEdit = "<div>" + imgEdit + "</div>";
+        imgEdit =
+          '<div data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip" data-bs-title="Edita los datos de la garrafa">' +
+          imgEdit +
+          "</div>";
         let row = $("<tr></tr>");
         let id = $("<td></td>");
         id.append(
@@ -442,8 +471,8 @@
 
         row.append(id);
         row.append($("<td></td>").text(item.name));
-        row.append($("<td></td>").text(item.capacidad.toFixed(2)));
-        row.append($("<td></td>").text(item.tara.toFixed(2)));
+        row.append($("<td></td>").text(item.capacidad.toFixed(2) + " Kg"));
+        row.append($("<td></td>").text(item.tara.toFixed(2) + " Kg"));
         row.append($("<td></td>").text(item.inicio.date.toLocaleString()));
         row.append($("<td></td>").text(item.fin.date.toLocaleString()));
         row.append($("<td></td>").text(item.duracion.toFixed(2)));
@@ -489,6 +518,7 @@
       loadHistorial.index = 0;
       loadHistorial.error = "";
       loadHistorial.prog = 0;
+      loadHistorial.waiting = false;
       loadHistorial.updateProg = () => {
         let porc = (loadHistorial.prog / 11) * 100;
         $("#historial-progbar").width(porc + "%");
@@ -502,9 +532,13 @@
       loadHistorial.updateProg();
       loadHistorial.timer = setInterval(function () {
         loadHistorial.updateProg();
+        if (loadHistorial.waiting)
+          //Esperar que se complete la consulta en curso
+          return;
         if (loadHistorial.index < 5) {
           let param = loadHistorial.index < 4 ? "page=" + loadHistorial.index : "";
-          $.get(serverIP + "/historial?" + param)
+          loadHistorial.waiting = true;
+          $.get(serverIP + "historial?" + param)
             .done(function (data) {
               if (param != "")
                 data.forEach((element, index) => {
@@ -512,7 +546,10 @@
                   element.name = "Garrafa " + (element.id + 1).toString();
                   element.precio = 0.0; //Todo: sacar esto y dejar el valor que devuelve la API
                   element.inicio.date = new Date(element.inicio.date);
+                  if (element.inicio.date < new Date("2020-01-01T00:00:00-03:00")) element.inicio.date = new Date("2020-01-01T00:00:00-03:00");
                   element.fin.date = new Date(element.fin.date);
+                  if (element.fin.date < element.inicio.date) element.fin.date = new Date(element.inicio.date.getTime() + 1000 * 60 * 60 * 24);
+                  if (element.estado == "online") element.fin.date = new Date(Date.now());
                   element.duracion = (element.fin.date.getTime() - element.inicio.date.getTime()) / (1000 * 60 * 60 * 24);
                   if (element.duracion < 0) element.duracion = 0;
                   Garrafas.list.push(element);
@@ -523,6 +560,7 @@
             .always(() => {
               loadHistorial.index++;
               loadHistorial.updateProg();
+              loadHistorial.waiting = false;
             });
         } else {
           clearInterval(loadHistorial.timer);
@@ -534,31 +572,45 @@
             alert("Ocurrió un error al cargar el historial -> " + loadHistorial.error);
           } else {
             console.log(Garrafas);
-            drawHistorial(Garrafas);
+            drawHistorial();
             drawTable(Garrafas);
           }
         }
-      }, 150);
+      }, 200);
     }
 
-    function updateStatus() {
-      $.ajax({ method: "GET", url: serverIP + "/status" }).done(function (status) {
-        console.log(status);
+    function drawEstado() {
+      if (Estado.error) {
+        $("#txtEstado").html('<h2>Estado: conectando...</h2> <div class="spinner-border text-dark" role="status"></div>');
+        $("#divEstado").addClass("opacity-50");
+      } else {
+        $("#txtEstado").html("<h2>Estado: conectado</h2>");
+        $("#divEstado").removeClass("opacity-50");
+        $("#medicion").text(Estado.estado === "online" ? "En linea" : "Medición pausada");
+        $("#capacidad").text("Capacidad garrafa: " + Estado.capacidad.toFixed(2) + " Kg");
+        if (Garrafas.list.length > 0) $("#fecha-inicio").text("Fecha de inicio: " + Garrafas.list[0].inicio.date.toLocaleDateString());
+        $("#en-linea").text("Tiempo en uso: " + Estado.online);
+        $("#consumido").text("Gas consumido: " + Estado.consumido.toFixed(2) + " Kg");
+        $("#temperatura").text("Temperatura: " + Estado.temp.toFixed(2) + " °C");
+        $("#presion").text("Presión: " + Estado.presion.toFixed(2) + " hPa");
 
-        $("#medicion").text(status.estado === "online" ? "En linea" : "Medición pausada");
-        $("#capacidad").text("Capacidad garrafa: " + status.capacidad.toFixed(2) + " Kg");
-        $("#fecha-inicio").text("Fecha de cambio: ");
-        $("#en-linea").text("Tiempo en uso: " + status.online);
-        $("#consumido").text("Gas consumido: " + status.consumido.toFixed(2) + " Kg");
-        $("#temperatura").text("Temperatura: " + status.temp.toFixed(2) + " °C");
-        $("#presion").text("Presión: " + status.presion.toFixed(2) + " hPa");
+        $("#disponible").text("Gas disponible: " + Estado.disponible + " Kg");
+        $("#porc").text("Capacidad garrafa: " + Estado.cons_porc + " %");
+        drawGauge();
+      }
+    }
 
-        $("#disponible").text("Gas disponible: " + status.disponible + " Kg");
-        $("#porc").text("Capacidad garrafa: " + status.cons_porc + " %");
-        drawGauge(status);
-
-        updateBtnMedicion(status);
-      });
+    function updateEstado() {
+      $.get(serverIP + "status")
+        .done(function (status) {
+          Estado = status;
+          Estado.error = false;
+          drawEstado();
+        })
+        .fail(function () {
+          Estado.error = true;
+          drawEstado();
+        });
     }
 
     function updateBtnMedicion(status) {
@@ -586,26 +638,28 @@
     }
 
     $(document).ready(function () {
-      updateStatus();
+      if (ValidateIPaddress(hostIP)) $.ajaxSetup({ timeout: 1000 }); //general timeout in milliseconds
+      else $.ajaxSetup({ timeout: 5000 }); //general timeout in milliseconds
+      updateEstado();
       loadHistorial();
 
-      setInterval(updateStatus, 2500);
+      setInterval(updateEstado, 2500);
 
       $("#btnMedicion").click(function () {
         // $("#btnMedicion").html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
         if ($("#btnMedicion").text() == "Detener") {
-          $.ajax({ method: "GET", url: serverIP + "/detener" }).done(function (status) {
-            updateStatus();
+          $.ajax({ method: "GET", url: serverIP + "detener" }).done(function (status) {
+            updateEstado();
           });
         } else {
-          $.ajax({ method: "GET", url: serverIP + "/iniciar" }).done(function (status) {
-            updateStatus();
+          $.ajax({ method: "GET", url: serverIP + "iniciar" }).done(function (status) {
+            updateEstado();
           });
         }
       });
 
       $("#btnEditar").click(function () {
-        $.ajax({ method: "GET", url: serverIP + "/info" }).done(function (info) {
+        $.ajax({ method: "GET", url: serverIP + "info" }).done(function (info) {
           loadEditInfo(info);
         });
       });
@@ -629,7 +683,7 @@
         info.tm_fin = dateHTMLToLocalEpoch($("#inputFinDate").val());
         console.log(info);
 
-        $.ajax({ type: "POST", url: serverIP + "/edit?id=" + info.id, data: JSON.stringify(info) }).done(function (info) {
+        $.ajax({ type: "POST", url: serverIP + "edit?id=" + info.id, data: JSON.stringify(info) }).done(function (info) {
           console.log(info);
         });
 
@@ -638,21 +692,24 @@
 
       $("#btnTime").click(function () {
         let time = Math.floor(Date.now() / 1000);
-        $.ajax({ type: "POST", url: serverIP + "/time", data: time.toString() }).done(function (info) {
+        $.ajax({ type: "POST", url: serverIP + "time", data: time.toString() }).done(function (info) {
           console.log(info);
         });
       });
 
       $("#btnReloadIP").click(function () {
         let ip = $("#inputServerIP").val();
-        if (ValidateIPaddress(ip) == true) {
-          $("#inputServerIP").addClass("border-success");
-          localStorage.setItem("serverIP", ip);
-          window.location.reload(true); //Recargar la página
-        } else {
-          $("#inputServerIP").addClass("border-danger");
-          alert("Ingrese una dirección IP válida");
+
+        if (!(ip.toLowerCase().startsWith("http://") || ip.toLowerCase().startsWith("https://"))) {
+          ip = location.protocol + "//" + ip;
         }
+        console.log(ip.indexOf(":", ip.indexOf("://") + 3) < 0);
+        console.log(!ip.endsWith("/"));
+        if (!ip.endsWith("/") && ip.indexOf(":", ip.indexOf("://") + 3) < 0) ip += "/";
+
+        $("#inputServerIP").addClass("border-success");
+        localStorage.setItem("serverIP", ip);
+        window.location.reload(true); //Recargar la página
       });
 
       //Para activar los popovers
@@ -662,6 +719,11 @@
 
       $(".popover-dismiss").popover({
         trigger: "focus",
+      });
+
+      $(window).on("resize", function () {
+        if (drawHistorial.width != $("#historial").width()) drawHistorial();
+        drawGauge();
       });
     });
 

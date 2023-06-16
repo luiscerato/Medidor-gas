@@ -3,12 +3,10 @@
 }
 
 body {
-	font-family: 'Ubuntu', sans-serif;
 	min-width: 300px;
 }
 
 .txtEstado {
-	font-family: 'Ubuntu', sans-serif;
 	font-size: 25px;
 }
 
@@ -62,10 +60,30 @@ body {
 	padding-right: 0.2rem !important;
 }
 
+/* Sobreescribir los valores por defecto de la clase tootip para que se vea según la clase Card de bootstrap*/
+.google-visualization-tooltip {
+	max-width: 300px !important;
+	border: none !important;
+	background-color: transparent !important;
+	border-radius: 0px !important;
+	font-size: 14px !important;
+	margin-left: -80px !important;	/* Para evitar que el tooltip se dibuje fuera de la pantalla*/
+	-webkit-border-radius: 0px !important;
+	-moz-border-radius: 0px !important;
+	-ms-border-radius: 0px !important;
+	-o-border-radius: 0px !important;
+}
+
+
 @media (max-width: 500px) {
 	.txtEstado {
 		font-family: 'Ubuntu', sans-serif;
 		font-size: 18px;
+	}
+	.google-visualization-tooltip {
+		max-width: 200px !important;
+		font-size: 10px !important;
+		margin-left: -20px !important;
 	}
 }
 
@@ -73,59 +91,10 @@ body {
 .updateIcon {
 	margin: 4px;
 }
+
 .updateIcon:hover {
 	margin: 0px;
 	width: 32px;
 	height: 32px;
 	transition-duration: 200ms;
-}
-
-
-.rotateIcon {
-	-webkit-animation: rotation 2s infinite linear;
-	-moz-animation: rotation 2s infinite linear;
-	-o-animation: rotation 2s infinite linear;
-	animation: rotation 2s infinite linear;
-	transform-origin: 50% 50%;
-	-webkit-transform-origin: 50% 50%;
-	-moz-transform-origin: 50% 50%;
-}
-@-webkit-keyframes rotation {
-	from {
-		-webkit-transform: rotate(0deg);
-	}
-
-	to {
-		-webkit-transform: rotate(359deg);
-	}
-}
-
-@-moz-keyframes rotation {
-	from {
-		-moz-transform: rotate(0deg);
-	}
-
-	to {
-		-moz-transform: rotate(359deg);
-	}
-}
-
-@-o-keyframes rotation {
-	from {
-		-o-transform: rotate(0deg);
-	}
-
-	to {
-		-o-transform: rotate(359deg);
-	}
-}
-
-@keyframes rotation {
-	from {
-		transform: rotate(0deg);
-	}
-
-	to {
-		transform: rotate(359deg);
-	}
 }
