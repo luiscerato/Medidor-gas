@@ -1,3 +1,4 @@
 {
-	"cmake.configureOnOpen": true
+  "cmake.configureOnOpen": true,
+  "cmake.sourceDirectory": "D:/Datos/Luis Cerato/Documents/PlatformIO/Projects/Medidor-Gas/.pio/libdeps/esp32doit-devkit-v1/ArduinoJson"
 }
